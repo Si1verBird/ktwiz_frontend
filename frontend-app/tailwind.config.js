@@ -14,6 +14,16 @@ module.exports = {
           600: '#2563eb',
           700: '#1d4ed8',
         },
+        kt: {
+          red: '#dc2626',
+          pink: '#ec4899',
+          purple: '#7c3aed',
+          blue: '#2563eb',
+        },
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
     },
   },
