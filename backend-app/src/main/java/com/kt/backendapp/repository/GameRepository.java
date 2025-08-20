@@ -25,14 +25,14 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
     @Query("SELECT g FROM Game g WHERE (g.homeTeam = :team OR g.awayTeam = :team)")
     List<Game> findByTeam(@Param("team") Team team);
     
-    @Query("SELECT COUNT(g) FROM Game g WHERE (g.homeTeam = :team OR g.awayTeam = :team) AND g.status = 'ended'")
-    Long countCompletedGamesByTeam(@Param("team") Team team);
+    @Query("SELECT COUNT(g) FROM Game g WHERE (g.homeTeam = :team OR g.awayTeam = :team) AND g.status = :status")
+    Long countCompletedGamesByTeam(@Param("team") Team team, @Param("status") GameStatus status);
     
-    @Query("SELECT COUNT(g) FROM Game g WHERE ((g.homeTeam = :team AND g.homeScore > g.awayScore) OR (g.awayTeam = :team AND g.awayScore > g.homeScore)) AND g.status = 'ended'")
-    Long countWinsByTeam(@Param("team") Team team);
+    @Query("SELECT COUNT(g) FROM Game g WHERE ((g.homeTeam = :team AND g.homeScore > g.awayScore) OR (g.awayTeam = :team AND g.awayScore > g.homeScore)) AND g.status = :status")
+    Long countWinsByTeam(@Param("team") Team team, @Param("status") GameStatus status);
     
-    @Query("SELECT COUNT(g) FROM Game g WHERE ((g.homeTeam = :team AND g.homeScore < g.awayScore) OR (g.awayTeam = :team AND g.awayScore < g.homeScore)) AND g.status = 'ended'")
-    Long countLossesByTeam(@Param("team") Team team);
+    @Query("SELECT COUNT(g) FROM Game g WHERE ((g.homeTeam = :team AND g.homeScore < g.awayScore) OR (g.awayTeam = :team AND g.awayScore < g.homeScore)) AND g.status = :status")
+    Long countLossesByTeam(@Param("team") Team team, @Param("status") GameStatus status);
     
     // 가장 가까운 경기 조회를 위한 메서드들
     List<Game> findByDateTimeAfterOrderByDateTimeAsc(LocalDateTime dateTime);

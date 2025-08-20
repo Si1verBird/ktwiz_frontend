@@ -15,14 +15,33 @@ export default function HomePage() {
   const [teamStanding, setTeamStanding] = useState(null)
   const [newsSlides, setNewsSlides] = useState([])
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false) // Hydration 에러 방지용
+
+  // 컴포넌트 마운트 확인 (Hydration 에러 방지)
+  useEffect(() => {
+    setMounted(true)
+    console.log('🔍 [DEBUG] 컴포넌트 마운트 완료')
+  }, [])
 
   // 로그인 상태 확인
   useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (userData) {
-      setUser(JSON.parse(userData))
+    if (!mounted) return // 마운트 전에는 실행하지 않음
+    
+    console.log('🔍 [DEBUG] 로그인 상태 확인 시작')
+    try {
+      const userData = localStorage.getItem('user')
+      console.log('🔍 [DEBUG] localStorage userData:', userData)
+      if (userData) {
+        const parsedUser = JSON.parse(userData)
+        console.log('🔍 [DEBUG] 파싱된 사용자 정보:', parsedUser)
+        setUser(parsedUser)
+      } else {
+        console.log('🔍 [DEBUG] 로그인된 사용자 없음')
+      }
+    } catch (error) {
+      console.error('🔍 [DEBUG] 로그인 상태 확인 오류:', error)
     }
-  }, [])
+  }, [mounted])
 
   // 데이터 로드
   useEffect(() => {
@@ -30,38 +49,47 @@ export default function HomePage() {
   }, [])
 
   const fetchData = async () => {
+    console.log('🔍 [DEBUG] 데이터 로딩 시작')
     setLoading(true)
     try {
+      console.log('🔍 [DEBUG] API 호출 시작...')
       await Promise.all([
         fetchNextGame(),
         fetchTeamStanding(),
         // fetchRecentPosts() // 임시로 비활성화
       ])
+      console.log('🔍 [DEBUG] API 호출 완료')
       // 기본 슬라이드 설정
       setNewsSlides(getDefaultSlides())
+      console.log('🔍 [DEBUG] 기본 슬라이드 설정 완료')
     } catch (error) {
-      console.error('데이터 로딩 실패:', error)
+      console.error('🔍 [DEBUG] 데이터 로딩 실패:', error)
     } finally {
       setLoading(false)
+      console.log('🔍 [DEBUG] 로딩 상태 해제')
     }
   }
 
   const fetchNextGame = async () => {
+    console.log('🔍 [DEBUG] 다음 경기 정보 조회 시작')
     try {
       const data = await gameAPI.getNextGame()
+      console.log('🔍 [DEBUG] 다음 경기 정보 조회 성공:', data)
       setNextGame(data)
     } catch (error) {
-      console.error('경기 정보를 가져오는데 실패했습니다:', error)
+      console.error('🔍 [DEBUG] 경기 정보를 가져오는데 실패했습니다:', error)
       setNextGame(null)
     }
   }
 
   const fetchTeamStanding = async () => {
+    console.log('🔍 [DEBUG] KT Wiz 팀 순위 조회 시작')
     try {
       const data = await standingAPI.getKtWizStanding()
+      console.log('🔍 [DEBUG] KT Wiz 팀 순위 조회 성공:', data)
       setTeamStanding(data)
     } catch (error) {
-      console.error('팀 순위 정보를 가져오는데 실패했습니다:', error)
+      console.error('🔍 [DEBUG] 팀 순위 정보를 가져오는데 실패했습니다:', error)
     }
   }
 
@@ -144,30 +172,32 @@ export default function HomePage() {
                 </div>
                 <div className="text-lg">오늘도 함께 응원해요!</div>
               </div>
-              {/* 로그인/로그아웃 버튼 */}
-              {user ? (
-                <div className="flex flex-col items-end space-y-1">
-                  {user.isAdmin && (
-                    <span className="text-xs px-2 py-1 rounded bg-white/30 backdrop-blur-sm">
-                      관리자
-                    </span>
-                  )}
-                  <button 
-                    onClick={handleLogout}
-                    className="text-xs px-2 py-1 rounded bg-white/20 backdrop-blur-sm hover:bg-white/30"
-                  >
-                    로그아웃
-                  </button>
-                </div>
-              ) : (
+                          {/* 로그인/로그아웃 버튼 */}
+            {mounted && user ? (
+              <div className="flex flex-col items-end space-y-1">
+                {user.isAdmin && (
+                  <span className="text-xs px-2 py-1 rounded bg-white/30 backdrop-blur-sm">
+                    관리자
+                  </span>
+                )}
                 <button 
-                  onClick={() => router.push('/login')}
-                  className="flex items-center text-xs px-3 py-1 rounded bg-white/20 backdrop-blur-sm hover:bg-white/30"
+                  onClick={handleLogout}
+                  className="text-xs px-3 py-1 rounded bg-white/20 backdrop-blur-sm hover:bg-white/30"
                 >
-                  <LogIn className="w-3 h-3 mr-1" />
-                  로그인
+                  로그아웃
                 </button>
-              )}
+              </div>
+            ) : mounted ? (
+              <button 
+                onClick={() => router.push('/login')}
+                className="flex items-center text-xs px-3 py-1 rounded bg-white/20 backdrop-blur-sm hover:bg-white/30"
+              >
+                <LogIn className="w-3 h-3 mr-1" />
+                로그인
+              </button>
+            ) : (
+              <div className="text-xs px-3 py-1 text-white/50">로딩중...</div>
+            )}
             </div>
           </div>
           <div className="absolute top-0 right-0 w-32 h-32 opacity-20">
@@ -185,7 +215,7 @@ export default function HomePage() {
             </button>
             
             {/* 로그인 상태에 따라 다른 버튼 표시 */}
-            {user ? (
+            {mounted && user ? (
               <button 
                 onClick={() => router.push("/my-wiz")}
                 className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2"
@@ -193,7 +223,7 @@ export default function HomePage() {
                 <Search className="w-6 h-6 text-white" />
                 <span className="text-sm">MY위즈</span>
               </button>
-            ) : (
+            ) : mounted ? (
               <button 
                 onClick={() => router.push("/login")}
                 className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2"
@@ -201,6 +231,11 @@ export default function HomePage() {
                 <LogIn className="w-6 h-6 text-white" />
                 <span className="text-sm">로그인</span>
               </button>
+            ) : (
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2">
+                <div className="w-6 h-6 bg-white/30 rounded animate-pulse"></div>
+                <div className="w-12 h-4 bg-white/30 rounded animate-pulse"></div>
+              </div>
             )}
           </div>
         </div>
@@ -286,7 +321,7 @@ export default function HomePage() {
             </button>
             
             {/* 관리자 경기 추가 버튼 */}
-            {user?.isAdmin && (
+            {mounted && user?.isAdmin && (
               <button 
                 onClick={() => router.push("/admin/add-game")}
                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm transition-colors"

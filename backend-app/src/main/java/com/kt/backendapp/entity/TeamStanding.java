@@ -21,9 +21,8 @@ public class TeamStanding {
     @Column(name = "team_id")
     private UUID teamId;
 
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "team_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", insertable = false, updatable = false)
     private Team team;
 
     @Column(name = "games_played", nullable = false)

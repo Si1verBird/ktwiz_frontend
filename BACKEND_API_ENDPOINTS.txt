@@ -1,0 +1,38 @@
+# KT Wiz Backend API Endpoints
+
+## 🏟️ Venues (구장)
+- GET /api/venues - 모든 구장 조회
+- GET /api/venues/{id} - 특정 구장 조회
+
+## 🏀 Teams (팀)
+- GET /api/teams - 모든 팀 조회
+- GET /api/teams/{id} - 특정 팀 조회
+
+## 🎮 Games (경기)
+- GET /api/games - 모든 경기 조회
+- GET /api/games/{gameId} - 특정 경기 조회
+- GET /api/games/status/{status} - 상태별 경기 조회
+- GET /api/games/date-range - 기간별 경기 조회 (start, end 파라미터)
+- GET /api/games/next - 가장 가까운 경기 조회 (메인페이지용)
+- POST /api/games - 새 경기 생성
+- PUT /api/games/{gameId} - 경기 수정
+- DELETE /api/games/{gameId} - 경기 삭제
+
+## 📊 Team Standings (팀 순위)
+- GET /api/standings - 모든 팀 순위 조회
+- GET /api/standings/team/{teamName} - 특정 팀 순위 조회
+- GET /api/standings/kt-wiz - KT Wiz 팀 순위 조회 (메인페이지용)
+- POST /api/standings/refresh - 모든 팀 통계 수동 업데이트 (관리자용)
+
+## 👤 Users (사용자)
+- POST /api/users/login - 로그인
+
+## 📝 Posts (게시글)
+- GET /api/posts - 모든 게시글 조회
+- GET /api/posts/admin-recent - 최근 관리자 게시글 조회 (limit 파라미터)
+
+## 🔧 기타
+- 모든 API는 CORS 허용 (localhost:3000)
+- Base URL: http://localhost:8080
+- Content-Type: application/json
+- 모든 API 경로는 `/api`로 시작

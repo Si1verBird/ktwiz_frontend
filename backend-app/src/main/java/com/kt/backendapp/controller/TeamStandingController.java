@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/standings")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Slf4j
 public class TeamStandingController {
 
@@ -71,6 +70,22 @@ public class TeamStandingController {
         } catch (Exception e) {
             log.error("팀 통계 업데이트 실패: {}", e.getMessage());
             return ResponseEntity.internalServerError().body("팀 통계 업데이트 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 팀 순위 테이블 초기화 (테스트용)
+     */
+    @PostMapping("/initialize")
+    public ResponseEntity<String> initializeStandings() {
+        log.info("팀 순위 테이블 초기화 요청");
+        
+        try {
+            teamStandingService.initializeTeamStandings();
+            return ResponseEntity.ok("팀 순위 테이블이 성공적으로 초기화되었습니다.");
+        } catch (Exception e) {
+            log.error("팀 순위 테이블 초기화 실패: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body("팀 순위 테이블 초기화 중 오류가 발생했습니다.");
         }
     }
 }

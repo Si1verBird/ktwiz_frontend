@@ -1,0 +1,168 @@
+# KT Wiz Frontend API 사용법
+
+## 🚀 API 호출 기본 설정
+```javascript
+// lib/api.js에서 기본 설정
+const API_BASE_URL = 'http://localhost:8080/api';
+
+// fetch 래퍼 함수
+export const apiCall = async (endpoint, options = {}) => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API 호출 실패: ${response.status}`);
+  }
+  
+  return response.json();
+};
+```
+
+## 🏟️ Venues (구장)
+```javascript
+// 모든 구장 조회
+const venues = await apiCall('/venues');
+
+// 특정 구장 조회
+const venue = await apiCall(`/venues/${venueId}`);
+```
+
+## 🏀 Teams (팀)
+```javascript
+// 모든 팀 조회
+const teams = await apiCall('/teams');
+
+// 특정 팀 조회
+const team = await apiCall(`/teams/${teamId}`);
+```
+
+## 🎮 Games (경기)
+```javascript
+// 모든 경기 조회
+const games = await apiCall('/games');
+
+// 특정 경기 조회
+const game = await apiCall(`/games/${gameId}`);
+
+// 상태별 경기 조회
+const gamesByStatus = await apiCall(`/games/status/${status}`);
+
+// 기간별 경기 조회
+const gamesByDateRange = await apiCall(`/games/date-range?start=${startDate}&end=${endDate}`);
+
+// 새 경기 생성
+const newGame = await apiCall('/games', {
+  method: 'POST',
+  body: JSON.stringify({
+    homeTeamId: 'team-uuid',
+    awayTeamId: 'team-uuid',
+    venueId: 'venue-uuid',
+    dateTime: '2024-01-01T18:00:00',
+    status: 'scheduled'
+  })
+});
+
+// 경기 수정
+const updatedGame = await apiCall(`/games/${gameId}`, {
+  method: 'PUT',
+  body: JSON.stringify({
+    homeScore: 3,
+    awayScore: 2,
+    status: 'ended'
+  })
+});
+
+// 경기 삭제
+await apiCall(`/games/${gameId}`, {
+  method: 'DELETE'
+});
+
+// 가장 가까운 경기 조회 (메인페이지용)
+const nextGame = await apiCall('/games/next');
+```
+
+## 📊 Team Standings (팀 순위)
+```javascript
+// 모든 팀 순위 조회
+const standings = await apiCall('/standings');
+
+// 특정 팀 순위 조회
+const teamStanding = await apiCall(`/standings/team/${teamName}`);
+
+// KT Wiz 팀 순위 조회 (메인페이지용)
+const ktWizStanding = await apiCall('/standings/kt-wiz');
+
+// 모든 팀 통계 수동 업데이트 (관리자용)
+await apiCall('/standings/refresh', {
+  method: 'POST'
+});
+```
+
+## 👤 Users (사용자)
+```javascript
+// 로그인
+const loginResult = await apiCall('/users/login', {
+  method: 'POST',
+  body: JSON.stringify({
+    email: 'admin@kt.com',
+    password: 'password123'
+  })
+});
+
+// 로그인 성공 시 localStorage에 저장
+if (loginResult.isAdmin) {
+  localStorage.setItem('user', JSON.stringify(loginResult));
+}
+```
+
+## 📝 Posts (게시글)
+```javascript
+// 모든 게시글 조회
+const posts = await apiCall('/posts');
+
+// 최근 관리자 게시글 조회 (limit 파라미터)
+const adminPosts = await apiCall('/posts/admin-recent?limit=5');
+```
+
+## 🔐 인증 상태 확인
+```javascript
+// 로그인 상태 확인
+const isLoggedIn = () => {
+  const user = localStorage.getItem('user');
+  return user !== null;
+};
+
+// 관리자 권한 확인
+const isAdmin = () => {
+  const user = localStorage.getItem('user');
+  if (!user) return false;
+  
+  const userData = JSON.parse(user);
+  return userData.isAdmin;
+};
+
+// 로그아웃
+const logout = () => {
+  localStorage.removeItem('user');
+  // 로그인 페이지로 리다이렉트
+};
+```
+
+## 🎯 주요 사용 페이지
+- **메인 페이지**: `/games/next`, `/standings/kt-wiz`, `/posts/admin-recent`
+- **경기 관리**: `/games` (CRUD)
+- **로그인**: `/users/login`
+- **경기 일정**: `/games`, `/games/status/{status}`, `/games/date-range`
+- **팀 순위**: `/standings`, `/standings/team/{teamName}`
+- **관리자 기능**: `/standings/refresh` (팀 통계 업데이트)
+
+## ⚠️ 주의사항
+- 모든 API 호출은 try-catch로 에러 처리
+- 로그인 상태는 localStorage로 관리
+- 관리자 기능은 isAdmin 체크 후 접근
+- CORS 설정으로 localhost:3000에서만 접근 가능
