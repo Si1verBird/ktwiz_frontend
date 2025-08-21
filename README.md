@@ -82,3 +82,21 @@ src/
 - npm 9+
 - Next.js 14
 - Tailwind CSS 3
+
+## 개발 도구
+
+- **ESLint**: 코드 품질 검사 (`eslint.config.mjs`)
+- **Prettier**: 코드 포맷팅 (`pretty.prettierrc`, `pretty.prettierignore`)
+- **API 문서**: `FRONTEND_API_USAGE.txt`에서 API 사용법 확인
+
+## 코드 품질
+
+프로젝트에는 ESLint와 Prettier가 설정되어 있어 일관된 코드 스타일을 유지합니다.
+
+```bash
+# 코드 포맷팅
+npx prettier --write .
+
+# 린팅 검사
+npx eslint .
+```
