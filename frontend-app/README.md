@@ -1,100 +1,102 @@
-# Frontend App
+# KT Wiz Frontend
 
-Next.js 기반의 현대적인 프론트엔드 애플리케이션입니다.
+KT Wiz 프로젝트의 프론트엔드 웹 애플리케이션입니다.
 
-## 🚀 기술 스택
+## 기술 스택
 
-- **프레임워크**: Next.js 14
-- **패키지 매니저**: npm
-- **언어**: JavaScript
-- **스타일링**: Tailwind CSS
-- **API 통신**: Axios
-- **라우팅**: App Router
-- **번들러**: TurboPack
+- **Next.js 14**
+- **React 18**
+- **Tailwind CSS**
+- **JavaScript (ES6+)**
 
-## 📁 프로젝트 구조
+## 주요 기능
 
-```
-frontend-app/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   └── example/
-│   │   │       └── route.js
-│   │   ├── globals.css
-│   │   ├── layout.js
-│   │   └── page.js
-│   └── components/ (추후 생성 예정)
-├── .eslintrc.json
-├── next.config.js
-├── package.json
-├── postcss.config.js
-├── tailwind.config.js
-└── README.md
-```
+- **메인페이지**: KT Wiz 최근 경기 정보, 팀 순위, 소식
+- **경기 일정**: 경기 필터링 (팀, 상태별)
+- **티켓 예매**: 경기 티켓 예매 시스템
+- **사용자 관리**: 로그인, 마이페이지
+- **관리자 기능**: 경기 추가/수정, 게시물 관리
 
-## 🛠️ 설치 및 실행
+## 페이지 구성
 
-### 1. 의존성 설치
+### 사용자 페이지
+- `/` - 메인페이지
+- `/schedule` - 경기 일정
+- `/ticket-booking` - 티켓 예매
+- `/my-wiz` - 마이페이지
+- `/login` - 로그인
+
+### 관리자 페이지
+- `/admin/games` - 경기 관리
+- `/admin/add-game` - 경기 추가
+- `/admin/games/[id]/edit` - 경기 수정
+
+## 설치 및 실행
+
+1. 의존성 설치
 ```bash
 npm install
 ```
 
-### 2. 개발 서버 실행
+2. 개발 서버 실행
 ```bash
 npm run dev
 ```
 
-개발 서버는 [http://localhost:3000](http://localhost:3000)에서 실행됩니다.
-
-### 3. 빌드
+3. 프로덕션 빌드
 ```bash
 npm run build
-```
-
-### 4. 프로덕션 서버 실행
-```bash
 npm start
 ```
 
-## 🔧 주요 기능
+## 환경 설정
 
-- **App Router**: Next.js 14의 최신 라우팅 시스템
-- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
-- **TurboPack**: 빠른 개발 빌드
-- **API Routes**: 서버리스 API 엔드포인트
-- **반응형 디자인**: 모바일과 데스크톱 최적화
+- 기본 포트: 3000
+- 백엔드 API: `http://localhost:8080/api`
+- 환경 변수: `.env.local` 파일에서 설정
 
-## 📱 컴포넌트
+## 프로젝트 구조
 
-### 기본 컴포넌트
-- `btn-primary`: 기본 버튼 스타일
-- `card`: 카드 컨테이너 스타일
+```
+src/
+├── app/                 # Next.js App Router
+│   ├── admin/          # 관리자 페이지
+│   ├── schedule/       # 경기 일정
+│   ├── ticket-booking/ # 티켓 예매
+│   └── ...
+├── components/          # 재사용 가능한 컴포넌트
+├── lib/                # 유틸리티 및 API
+└── ...
+```
 
-## 🌐 API 엔드포인트
+## API 연동
 
-### `/api/example`
-- `GET`: 서버 상태 확인
-- `POST`: 메시지 처리 (예시)
+- **경기 API**: 경기 조회, 필터링, 생성, 수정
+- **팀 API**: 팀 정보, 순위 조회
+- **사용자 API**: 로그인, 인증
+- **게시물 API**: 공지사항, 뉴스
 
-## 🎨 커스터마이징
+## 개발 환경
 
-### Tailwind CSS 설정
-`tailwind.config.js`에서 테마와 색상을 커스터마이징할 수 있습니다.
+- Node.js 18+
+- npm 9+
+- Next.js 14
+- Tailwind CSS 3
 
-### 새로운 페이지 추가
-`src/app/` 디렉토리에 새 폴더를 생성하여 페이지를 추가할 수 있습니다.
+## 개발 도구
 
-## 📝 개발 가이드
+- **ESLint**: 코드 품질 검사 (`eslint.config.mjs`)
+- **Prettier**: 코드 포맷팅 (`pretty.prettierrc`, `pretty.prettierignore`)
+- **API 문서**: `FRONTEND_API_USAGE.txt`에서 API 사용법 확인
 
-1. **컴포넌트 생성**: `src/components/` 디렉토리에 재사용 가능한 컴포넌트를 생성하세요.
-2. **API 추가**: `src/app/api/` 디렉토리에 새로운 API 엔드포인트를 추가하세요.
-3. **스타일링**: Tailwind CSS 클래스를 사용하여 스타일을 적용하세요.
+## 코드 품질
 
-## 🤝 기여
+프로젝트에는 ESLint와 Prettier가 설정되어 있어 일관된 코드 스타일을 유지합니다.
 
-프로젝트에 기여하고 싶으시다면 Pull Request를 보내주세요.
+```bash
+# 코드 포맷팅
+npx prettier --write .
 
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+# 린팅 검사
+npx eslint .
+```

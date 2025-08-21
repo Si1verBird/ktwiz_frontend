@@ -12,6 +12,7 @@ public class GameResponse {
     private LocalDateTime dateTime;
     private TeamDto homeTeam;
     private TeamDto awayTeam;
+    private VenueDto venue;
     private GameStatus status;
     private Integer inning;
     private Integer homeScore;
@@ -25,5 +26,14 @@ public class GameResponse {
         private UUID id;
         private String name;
         private String shortName;
+        private String logoUrl;
+    }
+
+    @Data
+    public static class VenueDto {
+        private UUID id;
+        private String name;
+        private String location;
+        private Integer capacity;
     }
 }

@@ -27,6 +27,16 @@ public class PostController {
         return ResponseEntity.ok(posts);
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<List<PostResponse>> getRecentPosts(@RequestParam(defaultValue = "3") int limit) {
+        log.info("최근 게시물 조회 요청 (limit: {})", limit);
+        
+        List<PostResponse> posts = postService.getRecentPosts(limit);
+        log.info("최근 게시물 {} 개 조회 완료", posts.size());
+        
+        return ResponseEntity.ok(posts);
+    }
+
     @GetMapping
     public ResponseEntity<List<PostResponse>> getAllPosts() {
         log.info("모든 게시물 조회 요청");

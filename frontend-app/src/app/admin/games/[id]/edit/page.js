@@ -12,7 +12,9 @@ export default function EditGamePage() {
   const gameId = params.id
 
   const [formData, setFormData] = useState({
-    dateTime: '',
+    date: '',
+    hour: '',
+    minute: '00',
     homeTeamId: '',
     awayTeamId: '', 
     status: 'scheduled',
@@ -39,11 +41,16 @@ export default function EditGamePage() {
       const game = await gameAPI.getGameById(gameId)
       
       // 날짜 형식 변환 (YYYY-MM-DDTHH:mm 형식으로)
-      const dateTime = new Date(game.dateTime).toISOString().slice(0, 16)
+      const gameDate = new Date(game.dateTime)
+      const date = gameDate.toISOString().slice(0, 10) // YYYY-MM-DD
+      const hour = gameDate.getHours().toString().padStart(2, '0')
+      const minute = gameDate.getMinutes().toString().padStart(2, '0')
       
       setOriginalGame(game)
       setFormData({
-        dateTime,
+        date,
+        hour,
+        minute,
         homeTeamId: game.homeTeam?.id || '',
         awayTeamId: game.awayTeam?.id || '',
         status: game.status || 'scheduled',
@@ -63,7 +70,7 @@ export default function EditGamePage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.dateTime) {
+    if (!formData.date || !formData.hour) {
       setError('경기 일시를 입력해주세요.')
       return
     }
@@ -75,7 +82,7 @@ export default function EditGamePage() {
       // ISO 형식으로 변환
       const gameData = {
         ...formData,
-        dateTime: new Date(formData.dateTime).toISOString(),
+        dateTime: new Date(`${formData.date}T${formData.hour}:${formData.minute}:00`).toISOString(),
         inning: parseInt(formData.inning) || 0,
         homeScore: parseInt(formData.homeScore) || 0,
         awayScore: parseInt(formData.awayScore) || 0,
@@ -173,14 +180,55 @@ export default function EditGamePage() {
                   <Calendar className="h-4 w-4 inline mr-2" />
                   경기 일시
                 </label>
-                <input
-                  type="datetime-local"
-                  name="dateTime"
-                  value={formData.dateTime}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
+                <div className="grid grid-cols-3 gap-3">
+                  {/* 날짜 */}
+                  <div>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  
+                  {/* 시간 */}
+                  <div>
+                    <select
+                      name="hour"
+                      value={formData.hour}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="">시간</option>
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hour = i.toString().padStart(2, '0')
+                        return (
+                          <option key={hour} value={hour}>
+                            {hour}시
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                  
+                  {/* 분 */}
+                  <div>
+                    <select
+                      name="minute"
+                      value={formData.minute}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="00">00분</option>
+                      <option value="30">30분</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">시간은 00분 또는 30분만 선택 가능합니다</p>
               </div>
 
               {/* 경기 상태 */}

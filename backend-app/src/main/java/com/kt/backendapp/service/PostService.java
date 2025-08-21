@@ -36,6 +36,21 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    public List<PostResponse> getRecentPosts(int limit) {
+        log.debug("최근 게시물 조회 (limit: {})", limit);
+        
+        List<Post> posts = postRepository.findRecentPosts(
+                PostStatus.published, 
+                PageRequest.of(0, limit)
+        );
+        
+        log.info("최근 게시물 {} 개 조회", posts.size());
+        
+        return posts.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<PostResponse> getAllPosts() {
         log.debug("모든 게시물 조회");
         

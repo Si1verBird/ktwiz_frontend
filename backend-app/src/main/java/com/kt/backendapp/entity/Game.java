@@ -20,6 +20,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Game {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "date_time", nullable = false)
@@ -34,7 +35,7 @@ public class Game {
     private Team awayTeam;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private GameStatus status = GameStatus.scheduled;
 
     @Column(nullable = false)

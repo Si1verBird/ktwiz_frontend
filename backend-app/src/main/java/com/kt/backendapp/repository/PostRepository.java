@@ -19,6 +19,11 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     List<Post> findRecentAdminPosts(PostStatus status, Pageable pageable);
     
     @Query("SELECT p FROM Post p JOIN FETCH p.author " +
+           "WHERE p.status = :status AND p.deleted = false " +
+           "ORDER BY p.createdAt DESC")
+    List<Post> findRecentPosts(PostStatus status, Pageable pageable);
+    
+    @Query("SELECT p FROM Post p JOIN FETCH p.author " +
            "WHERE p.deleted = false " +
            "ORDER BY p.createdAt DESC")
     List<Post> findAllByOrderByCreatedAtDesc();

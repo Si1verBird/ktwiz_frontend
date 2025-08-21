@@ -40,6 +40,7 @@ public class TeamService {
                 .id(team.getId())
                 .name(team.getName())
                 .shortName(team.getShortName())
+                .logoUrl(team.getLogoUrl())
                 .venue(team.getVenue() != null ? TeamResponse.VenueDto.builder()
                         .id(team.getVenue().getId())
                         .name(team.getVenue().getName())

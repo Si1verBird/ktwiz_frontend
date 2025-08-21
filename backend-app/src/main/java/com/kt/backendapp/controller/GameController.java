@@ -88,18 +88,55 @@ public class GameController {
     }
 
     /**
+     * KT Wiz의 최근 종료된 경기 조회 (메인페이지 game schedule용)
+     */
+    @GetMapping("/kt-wiz/latest-ended")
+    public ResponseEntity<GameResponse> getKtWizLatestEndedGame() {
+        log.info("KT Wiz의 최근 종료된 경기 조회 요청");
+        
+        GameResponse latestGame = gameService.getKtWizLatestEndedGame();
+        if (latestGame == null) {
+            log.info("KT Wiz의 종료된 경기가 없습니다");
+            return ResponseEntity.notFound().build();
+        }
+        
+        log.info("KT Wiz의 최근 종료된 경기: {}", latestGame.getId());
+        return ResponseEntity.ok(latestGame);
+    }
+
+    /**
+     * 팀과 상태로 경기 필터링
+     */
+    @GetMapping("/filter")
+    public ResponseEntity<List<GameResponse>> getGamesByFilter(
+            @RequestParam(required = false) List<UUID> teamIds,
+            @RequestParam(required = false) List<GameStatus> statuses) {
+        log.info("경기 필터링 요청 - 팀: {}, 상태: {}", teamIds, statuses);
+        
+        List<GameResponse> games = gameService.getGamesByTeamsAndStatuses(teamIds, statuses);
+        return ResponseEntity.ok(games);
+    }
+
+    /**
      * 경기 생성
      */
     @PostMapping
     public ResponseEntity<GameResponse> createGame(@RequestBody GameRequest request) {
-        log.info("경기 생성 요청: {}", request);
+        log.info("경기 생성 요청 시작");
+        log.info("요청 데이터: dateTime={}, homeTeamId={}, awayTeamId={}, status={}, ticketPrice={}", 
+                request.getDateTime(), request.getHomeTeamId(), request.getAwayTeamId(), 
+                request.getStatus(), request.getTicketPrice());
         
         try {
             GameResponse createdGame = gameService.createGame(request);
+            log.info("경기 생성 성공: {}", createdGame.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdGame);
         } catch (IllegalArgumentException e) {
-            log.error("경기 생성 실패: {}", e.getMessage());
+            log.error("경기 생성 실패 (잘못된 요청): {}", e.getMessage());
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("경기 생성 실패 (서버 오류): ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -120,6 +157,8 @@ public class GameController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+
 
     /**
      * 경기 삭제

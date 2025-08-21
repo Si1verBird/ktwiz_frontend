@@ -33,6 +33,9 @@ export default function LoginPage() {
     try {
       const response = await userAPI.login(formData.email, formData.password)
       
+      console.log('🔍 [DEBUG] 로그인 응답:', response)
+      console.log('🔍 [DEBUG] 관리자 여부:', response?.is_admin)
+      
       // 로그인 정보를 localStorage에 저장
       localStorage.setItem('user', JSON.stringify(response))
       

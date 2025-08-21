@@ -1,5 +1,6 @@
 package com.kt.backendapp.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.kt.backendapp.enums.ChatRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Chat {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "session_id", nullable = false)
@@ -24,6 +26,7 @@ public class Chat {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     @Enumerated(EnumType.STRING)

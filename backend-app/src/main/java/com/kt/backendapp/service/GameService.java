@@ -84,7 +84,6 @@ public class GameService {
 
         // 경기 생성
         Game game = new Game();
-        game.setId(UUID.randomUUID());
         game.setDateTime(request.getDateTime());
         game.setHomeTeam(homeTeam);
         game.setAwayTeam(awayTeam);
@@ -96,6 +95,9 @@ public class GameService {
 
         Game savedGame = gameRepository.save(game);
         log.info("새 경기 생성 완료: {}", savedGame.getId());
+
+        // 새 경기 생성 후 팀 순위 새로고침 (경기 수가 변경되었으므로)
+        teamStandingService.updateAllTeamStandings();
 
         return convertToResponse(savedGame);
     }
@@ -225,6 +227,7 @@ public class GameService {
         homeTeamDto.setId(game.getHomeTeam().getId());
         homeTeamDto.setName(game.getHomeTeam().getName());
         homeTeamDto.setShortName(game.getHomeTeam().getShortName());
+        homeTeamDto.setLogoUrl(game.getHomeTeam().getLogoUrl());
         response.setHomeTeam(homeTeamDto);
 
         // 원정팀 정보
@@ -232,7 +235,18 @@ public class GameService {
         awayTeamDto.setId(game.getAwayTeam().getId());
         awayTeamDto.setName(game.getAwayTeam().getName());
         awayTeamDto.setShortName(game.getAwayTeam().getShortName());
+        awayTeamDto.setLogoUrl(game.getAwayTeam().getLogoUrl());
         response.setAwayTeam(awayTeamDto);
+
+        // 경기장 정보 (홈팀의 경기장)
+        if (game.getHomeTeam().getVenue() != null) {
+            GameResponse.VenueDto venueDto = new GameResponse.VenueDto();
+            venueDto.setId(game.getHomeTeam().getVenue().getId());
+            venueDto.setName(game.getHomeTeam().getVenue().getName());
+            venueDto.setLocation(game.getHomeTeam().getVenue().getLocation());
+            venueDto.setCapacity(game.getHomeTeam().getVenue().getCapacity());
+            response.setVenue(venueDto);
+        }
 
         return response;
     }
@@ -260,5 +274,69 @@ public class GameService {
         Game nextGame = upcomingGames.get(0);
         log.info("가장 가까운 경기 조회 완료: {}", nextGame.getId());
         return convertToResponse(nextGame);
+    }
+
+    /**
+     * KT Wiz의 최근 종료된 경기 조회
+     */
+    @Transactional(readOnly = true)
+    public GameResponse getKtWizLatestEndedGame() {
+        log.info("KT Wiz의 최근 종료된 경기 조회 시작");
+        
+        // KT Wiz ID (UUID: 20000000-0000-0000-0000-000000000008)
+        UUID ktWizId = UUID.fromString("20000000-0000-0000-0000-000000000008");
+        
+        // KT Wiz가 참여한 종료된 경기 중 가장 최근 경기 조회
+        List<Game> endedGames = gameRepository.findByTeamIdAndStatusOrderByDateTimeDesc(ktWizId, GameStatus.ended);
+        
+        log.info("KT Wiz 종료된 경기 총 {}개 발견", endedGames.size());
+        
+        if (endedGames.isEmpty()) {
+            log.warn("KT Wiz의 종료된 경기가 없습니다");
+            return null;
+        }
+        
+        Game game = endedGames.get(0); // 가장 최근 경기
+        log.info("KT Wiz의 최근 종료된 경기 조회 완료: ID={}, 날짜={}, 홈팀={}, 원정팀={}", 
+                game.getId(), game.getDateTime(), game.getHomeTeam().getName(), game.getAwayTeam().getName());
+        return convertToResponse(game);
+    }
+
+    /**
+     * 팀과 상태로 경기 필터링
+     */
+    @Transactional(readOnly = true)
+    public List<GameResponse> getGamesByTeamsAndStatuses(List<UUID> teamIds, List<GameStatus> statuses) {
+        log.debug("팀과 상태로 경기 필터링: 팀 {}개, 상태 {}개", 
+                teamIds != null ? teamIds.size() : 0, 
+                statuses != null ? statuses.size() : 0);
+        
+        // 간단한 필터링 로직
+        if ((teamIds == null || teamIds.isEmpty()) && (statuses == null || statuses.isEmpty())) {
+            // 필터가 없으면 모든 경기 반환
+            List<Game> allGames = gameRepository.findAll();
+            return allGames.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+        }
+        
+        // 팀 ID가 있는 경우
+        if (teamIds != null && !teamIds.isEmpty()) {
+            List<Game> games = gameRepository.findByHomeTeamIdInOrAwayTeamIdInAndStatusInOrderByDateTimeAsc(
+                teamIds, teamIds, statuses != null ? statuses : List.of());
+            return games.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+        }
+        
+        // 상태만 있는 경우
+        if (statuses != null && !statuses.isEmpty()) {
+            List<Game> games = gameRepository.findByStatusInOrderByDateTimeAsc(statuses);
+            return games.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+        }
+        
+        return List.of();
     }
 }

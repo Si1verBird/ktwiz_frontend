@@ -9,7 +9,9 @@ import { gameAPI, venueAPI } from '../../../lib/api'
 export default function AddGamePage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    dateTime: '',
+    date: '',
+    hour: '',
+    minute: '00',
     homeTeamId: '',
     awayTeamId: '',
     ticketPrice: '',
@@ -19,6 +21,8 @@ export default function AddGamePage() {
     awayScore: 0
   })
   const [teams, setTeams] = useState([])
+  const [showScoreFields, setShowScoreFields] = useState(false)
+  const [statusDisabled, setStatusDisabled] = useState(false)
   
   // 팀 목록 가져오기
   useEffect(() => {
@@ -27,22 +31,26 @@ export default function AddGamePage() {
 
   const fetchTeams = async () => {
     try {
-      // 실제 백엔드에서 팀 목록을 가져와야 하지만, 임시로 DB에 있는 팀들로 설정
-      const mockTeams = [
-        { id: '1', name: 'KT wiz', shortName: 'kt' },
-        { id: '2', name: 'LG 트윈스', shortName: 'LG' },
-        { id: '3', name: '두산 베어스', shortName: '두산' },
-        { id: '4', name: '삼성 라이온즈', shortName: '삼성' },
-        { id: '5', name: '롯데 자이언츠', shortName: '롯데' },
-        { id: '6', name: 'KIA 타이거즈', shortName: 'KIA' },
-        { id: '7', name: 'SSG 랜더스', shortName: 'SSG' },
-        { id: '8', name: 'NC 다이노스', shortName: 'NC' },
-        { id: '9', name: '키움 히어로즈', shortName: '키움' },
-        { id: '10', name: '한화 이글스', shortName: '한화' }
-      ]
-      setTeams(mockTeams)
+      // 실제 백엔드에서 팀 목록 가져오기
+      const { teamAPI } = await import('../../../lib/api')
+      const data = await teamAPI.getAllTeams()
+      setTeams(data)
     } catch (error) {
       console.error('팀 목록을 가져오는데 실패했습니다:', error)
+      // fallback으로 실제 DB ID 사용
+      const mockTeams = [
+        { id: '20000000-0000-0000-0000-000000000001', name: 'LG 트윈스', shortName: 'LG' },
+        { id: '20000000-0000-0000-0000-000000000002', name: '두산 베어스', shortName: '두산' },
+        { id: '20000000-0000-0000-0000-000000000003', name: '삼성 라이온즈', shortName: '삼성' },
+        { id: '20000000-0000-0000-0000-000000000004', name: '롯데 자이언츠', shortName: '롯데' },
+        { id: '20000000-0000-0000-0000-000000000005', name: 'SSG 랜더스', shortName: 'SSG' },
+        { id: '20000000-0000-0000-0000-000000000006', name: 'NC 다이노스', shortName: 'NC' },
+        { id: '20000000-0000-0000-0000-000000000007', name: '키움 히어로즈', shortName: '키움' },
+        { id: '20000000-0000-0000-0000-000000000008', name: 'KT wiz', shortName: 'KT' },
+        { id: '20000000-0000-0000-0000-000000000009', name: '한화 이글스', shortName: '한화' },
+        { id: '20000000-0000-0000-0000-000000000010', name: 'KIA 타이거즈', shortName: 'KIA' }
+      ]
+      setTeams(mockTeams)
     }
   }
   const [loading, setLoading] = useState(false)
@@ -66,22 +74,49 @@ export default function AddGamePage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target
     
-    // 홈팀이 변경되면 자동으로 경기장 선택
-    if (name === 'homeTeamName') {
-      const homeVenueName = teamVenueMapping[value]
-      const homeVenue = venues.find(venue => venue.name === homeVenueName)
-      
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        venueId: homeVenue ? homeVenue.id : ''
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }))
+    // 새로운 formData 생성
+    const newFormData = {
+      ...formData,
+      [name]: value
     }
+    
+    // 날짜가 변경되면 자동으로 상태 결정
+    if ((name === 'date' || name === 'hour' || name === 'minute') && newFormData.date && newFormData.hour) {
+      const selectedDate = new Date(`${newFormData.date}T${newFormData.hour}:${newFormData.minute}:00`)
+      
+      const today = new Date()
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      const selectedStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate())
+      
+      let autoStatus = 'scheduled'
+      let disabled = true
+      let showScore = false
+      
+      if (selectedStart < todayStart) {
+        // 과거 날짜 → 종료
+        autoStatus = 'ended'
+        showScore = true
+      } else if (selectedStart > todayStart) {
+        // 미래 날짜 → 예정
+        autoStatus = 'scheduled'
+      } else {
+        // 오늘 날짜 → 직접 선택 가능
+        disabled = false
+        autoStatus = formData.status || 'scheduled'
+        showScore = formData.status === 'ended'
+      }
+      
+      setStatusDisabled(disabled)
+      setShowScoreFields(showScore)
+      newFormData.status = autoStatus
+    }
+    
+    // 상태가 변경되면 점수 필드 표시 여부 결정
+    if (name === 'status') {
+      setShowScoreFields(value === 'ended')
+    }
+    
+    setFormData(newFormData)
   }
 
   const handleSubmit = async (e) => {
@@ -91,19 +126,18 @@ export default function AddGamePage() {
 
     try {
       // 날짜와 시간을 ISO 형식으로 변환
-      const dateTimeValue = new Date(formData.dateTime).toISOString()
+      const dateTimeValue = new Date(`${formData.date}T${formData.hour}:${formData.minute}:00`).toISOString()
       
       const gameData = {
         dateTime: dateTimeValue,
-        homeTeamName: formData.homeTeamName,
-        awayTeamName: formData.awayTeamName,
-        venueId: formData.venueId,
+        homeTeamId: formData.homeTeamId,
+        awayTeamId: formData.awayTeamId,
         ticketPrice: parseInt(formData.ticketPrice),
         status: formData.status
       }
 
       // 경기가 종료된 경우에만 점수와 이닝 정보 포함
-      if (formData.status === 'ENDED') {
+      if (formData.status === 'ended') {
         gameData.inning = parseInt(formData.inning) || 9
         gameData.homeScore = parseInt(formData.homeScore) || 0
         gameData.awayScore = parseInt(formData.awayScore) || 0
@@ -123,9 +157,9 @@ export default function AddGamePage() {
   // teams 배열은 useState로 관리됨 (위에서 선언)
 
   const gameStatuses = [
-    { value: 'SCHEDULED', label: '예정' },
-    { value: 'LIVE', label: '진행중' },
-    { value: 'ENDED', label: '종료' }
+    { value: 'scheduled', label: '예정' },
+    { value: 'in_progress', label: '진행중' },
+    { value: 'ended', label: '종료' }
   ]
 
   return (
@@ -154,14 +188,55 @@ export default function AddGamePage() {
                   <Calendar className="w-4 h-4 mr-2" />
                   경기 일시
                 </label>
-                <input
-                  type="datetime-local"
-                  name="dateTime"
-                  value={formData.dateTime}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
+                <div className="grid grid-cols-3 gap-3">
+                  {/* 날짜 */}
+                  <div>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  
+                  {/* 시간 */}
+                  <div>
+                    <select
+                      name="hour"
+                      value={formData.hour}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="">시간</option>
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hour = i.toString().padStart(2, '0')
+                        return (
+                          <option key={hour} value={hour}>
+                            {hour}시
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+                  
+                  {/* 분 */}
+                  <div>
+                    <select
+                      name="minute"
+                      value={formData.minute}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="00">00분</option>
+                      <option value="30">30분</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">시간은 00분 또는 30분만 선택 가능합니다</p>
               </div>
 
               {/* 홈팀 */}
@@ -213,8 +288,9 @@ export default function AddGamePage() {
                   name="status"
                   value={formData.status}
                   onChange={handleInputChange}
+                  disabled={statusDisabled}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 ${statusDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 >
                   {gameStatuses.map(status => (
                     <option key={status.value} value={status.value}>
@@ -243,7 +319,7 @@ export default function AddGamePage() {
               </div>
 
               {/* 경기 종료시에만 표시되는 필드들 */}
-              {formData.status === 'ENDED' && (
+              {showScoreFields && (
                 <>
                   {/* 이닝 */}
                   <div>
@@ -267,12 +343,12 @@ export default function AddGamePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        어웨이팀 점수
+                        홈팀 점수 {formData.homeTeamId && `(${teams.find(t => t.id === formData.homeTeamId)?.name || '팀 선택'})`}
                       </label>
                       <input
                         type="number"
-                        name="awayScore"
-                        value={formData.awayScore}
+                        name="homeScore"
+                        value={formData.homeScore}
                         onChange={handleInputChange}
                         min="0"
                         placeholder="0"
@@ -281,12 +357,12 @@ export default function AddGamePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        홈팀 점수
+                        어웨이팀 점수 {formData.awayTeamId && `(${teams.find(t => t.id === formData.awayTeamId)?.name || '팀 선택'})`}
                       </label>
                       <input
                         type="number"
-                        name="homeScore"
-                        value={formData.homeScore}
+                        name="awayScore"
+                        value={formData.awayScore}
                         onChange={handleInputChange}
                         min="0"
                         placeholder="0"

@@ -38,4 +38,24 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
     List<Game> findByDateTimeAfterOrderByDateTimeAsc(LocalDateTime dateTime);
     
     List<Game> findTop1ByOrderByDateTimeDesc();
+    
+    // KT Wiz의 최근 종료된 경기 조회
+    @Query("SELECT g FROM Game g JOIN FETCH g.homeTeam ht JOIN FETCH ht.venue JOIN FETCH g.awayTeam WHERE (g.homeTeam.id = :teamId OR g.awayTeam.id = :teamId) AND g.status = :status ORDER BY g.dateTime DESC")
+    List<Game> findByTeamIdAndStatusOrderByDateTimeDesc(@Param("teamId") UUID teamId, @Param("status") GameStatus status);
+    
+    // 팀과 상태로 경기 필터링 (간단한 버전) - JOIN FETCH 포함
+    @Query("SELECT g FROM Game g JOIN FETCH g.homeTeam ht JOIN FETCH ht.venue JOIN FETCH g.awayTeam WHERE (g.homeTeam.id IN :homeTeamIds OR g.awayTeam.id IN :awayTeamIds) AND g.status IN :statuses ORDER BY g.dateTime ASC")
+    List<Game> findByHomeTeamIdInOrAwayTeamIdInAndStatusInOrderByDateTimeAsc(
+        @Param("homeTeamIds") List<UUID> homeTeamIds, 
+        @Param("awayTeamIds") List<UUID> awayTeamIds, 
+        @Param("statuses") List<GameStatus> statuses
+    );
+    
+    // 상태로 경기 조회 - JOIN FETCH 포함
+    @Query("SELECT g FROM Game g JOIN FETCH g.homeTeam ht JOIN FETCH ht.venue JOIN FETCH g.awayTeam WHERE g.status IN :statuses ORDER BY g.dateTime ASC")
+    List<Game> findByStatusInOrderByDateTimeAsc(@Param("statuses") List<GameStatus> statuses);
+    
+    // 전체 경기 조회 (findAll 오버라이드) - JOIN FETCH 포함
+    @Query("SELECT g FROM Game g JOIN FETCH g.homeTeam ht JOIN FETCH ht.venue JOIN FETCH g.awayTeam ORDER BY g.dateTime ASC")
+    List<Game> findAll();
 }

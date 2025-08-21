@@ -5,5 +5,6 @@ public enum PostCategory {
     story,
     photo,
     highlight,
-    live
+    live,
+    general
 }

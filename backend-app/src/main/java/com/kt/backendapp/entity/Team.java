@@ -27,6 +27,9 @@ public class Team {
     @Column(name = "short_name")
     private String shortName;
 
+    @Column(name = "logo_url")
+    private String logoUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id", nullable = false)
     private Venue venue;
