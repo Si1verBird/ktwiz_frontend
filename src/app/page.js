@@ -61,7 +61,7 @@ export default function HomePage() {
       ])
       console.log('🔍 [DEBUG] API 호출 완료')
       // 기본 슬라이드 설정
-      // setNewsSlides(getDefaultSlides()) // 더미 슬라이드 제거
+      // setNewsSlides(getDefaultSlides()) 
       console.log('🔍 [DEBUG] 기본 슬라이드 설정 완료')
     } catch (error) {
       console.error('🔍 [DEBUG] 데이터 로딩 실패:', error)
@@ -84,10 +84,15 @@ export default function HomePage() {
   }
 
   const fetchKtWizLatestGame = async () => {
-    console.log('🔍 [DEBUG] KT Wiz 최근 경기 조회 시작')
+    console.log('🔍 [DEBUG] KT Wiz 최근 경기 조회 시작 - 현재 시간:', new Date().toISOString())
     try {
+      // 캐시 버스팅을 위해 타임스탬프 추가
       const data = await gameAPI.getKtWizLatestGame()
       console.log('🔍 [DEBUG] KT Wiz 최근 경기 조회 성공:', data)
+      console.log('🔍 [DEBUG] 경기 날짜:', data?.dateTime)
+      console.log('🔍 [DEBUG] 경기 상태:', data?.status)
+      console.log('🔍 [DEBUG] 홈팀:', data?.homeTeam?.name, '로고:', data?.homeTeam?.logoUrl)
+      console.log('🔍 [DEBUG] 원정팀:', data?.awayTeam?.name, '로고:', data?.awayTeam?.logoUrl)
       setKtWizLatestGame(data)
     } catch (error) {
       console.error('🔍 [DEBUG] KT Wiz 최근 경기 정보를 가져오는데 실패했습니다:', error)
@@ -166,17 +171,6 @@ export default function HomePage() {
                           {/* 로그인/로그아웃 버튼 */}
             {mounted && user ? (
               <div className="flex flex-col items-end space-y-1">
-                {user.is_admin && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 className="text-lg font-semibold text-blue-800 mb-2">관리자 메뉴</h3>
-                    <button
-                      onClick={() => router.push('/admin/games')}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      경기 관리(관리자용)
-                    </button>
-                  </div>
-                )}
                 <button 
                   onClick={handleLogout}
                   className="text-xs px-3 py-1 rounded bg-white/20 backdrop-blur-sm hover:bg-white/30"
@@ -348,10 +342,20 @@ export default function HomePage() {
               <>
                 {/* Away Team */}
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-2">
-                    <div className="text-white font-bold text-xs text-center">
-                      {ktWizLatestGame.awayTeam?.shortName || ktWizLatestGame.awayTeam?.name?.slice(0, 3) || 'TBD'}
-                    </div>
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2">
+                    {ktWizLatestGame.awayTeam?.logoUrl ? (
+                      <img 
+                        src={ktWizLatestGame.awayTeam.logoUrl} 
+                        alt={ktWizLatestGame.awayTeam.name}
+                        className="w-14 h-14 object-contain"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center">
+                        <div className="text-white font-bold text-xs text-center">
+                          {ktWizLatestGame.awayTeam?.shortName || ktWizLatestGame.awayTeam?.name?.slice(0, 3) || 'TBD'}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="text-sm text-gray-600">{ktWizLatestGame.awayTeam?.name || 'TBD'}</div>
                 </div>
@@ -365,10 +369,20 @@ export default function HomePage() {
 
                 {/* Home Team */}
                 <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mb-2">
-                    <div className="text-white font-bold text-xs text-center">
-                      {ktWizLatestGame.homeTeam?.shortName || ktWizLatestGame.homeTeam?.name?.slice(0, 3) || 'TBD'}
-                    </div>
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2">
+                    {ktWizLatestGame.homeTeam?.logoUrl ? (
+                      <img 
+                        src={ktWizLatestGame.homeTeam.logoUrl} 
+                        alt={ktWizLatestGame.homeTeam.name}
+                        className="w-14 h-14 object-contain"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
+                        <div className="text-white font-bold text-xs text-center">
+                          {ktWizLatestGame.homeTeam?.shortName || ktWizLatestGame.homeTeam?.name?.slice(0, 3) || 'TBD'}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="text-sm text-gray-600">{ktWizLatestGame.homeTeam?.name || 'TBD'}</div>
                 </div>
