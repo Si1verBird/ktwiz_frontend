@@ -92,12 +92,23 @@ export default function WizTalkPage() {
                 <div key={post.id} className="bg-white rounded-2xl p-6 shadow-sm">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full ${getCategoryColor(post.category)} flex items-center justify-center text-white text-sm font-medium`}>
-                        {getCategoryText(post.category).charAt(0)}
+                      <div className="w-10 h-10 rounded-full overflow-hidden">
+                        <img 
+                          src="https://i.namu.wiki/i/1I_O46xxWGvTC-arPbfuBwaYgmd0I9gOCfTSchy5Hf5zZ-blf38j7boUFED_abbT5R8Qsj_Ynb-b7x4zxPk4HQ.svg"
+                          alt="프로필"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">
-                          {post.author?.name || '알 수 없음'}
+                        <div className="flex items-center space-x-2">
+                          <div className="font-medium text-gray-900">
+                            {post.author?.nickname || '알 수 없음'}
+                          </div>
+                          {post.author?.admin && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                              관리자
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500">
                           {formatTime(post.createdAt)}

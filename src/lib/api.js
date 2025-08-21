@@ -157,6 +157,16 @@ export const chatAPI = {
       message
     }),
   }),
+  
+  // 관리자 메시지 전송
+  sendAdminMessage: (sessionId, adminId, message) => apiRequest('/chats/admin-message', {
+    method: 'POST',
+    body: JSON.stringify({
+      sessionId,
+      adminId,
+      message
+    }),
+  }),
 }
 
 export default {

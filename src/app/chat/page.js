@@ -7,26 +7,36 @@ import { chatAPI } from '../../lib/api'
 
 export default function ChatPage() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
   const [sessionId, setSessionId] = useState(null)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // 컴포넌트 마운트 확인
   useEffect(() => {
-    initializeChat()
+    setMounted(true)
   }, [])
 
+  useEffect(() => {
+    if (mounted) {
+      initializeChat()
+    }
+  }, [mounted])
+
   const initializeChat = async () => {
+    if (!mounted) return // 마운트 확인
+    
     try {
       // 사용자 정보 로드
-      const userData = localStorage.getItem('user')
+      const userData = localStorage?.getItem('user')
       if (userData) {
         setUser(JSON.parse(userData))
       }
 
       // 기존 세션 ID 확인 (24시간 내)
-      const storedSession = localStorage.getItem('chatSession')
+      const storedSession = localStorage?.getItem('chatSession')
       const now = new Date().getTime()
       
       let currentSessionId = null
@@ -37,7 +47,7 @@ export default function ChatPage() {
         if (now - timestamp < 86400000) {
           currentSessionId = stored
         } else {
-          localStorage.removeItem('chatSession')
+          localStorage?.removeItem('chatSession')
         }
       }
       
@@ -45,7 +55,7 @@ export default function ChatPage() {
       if (!currentSessionId) {
         const response = await chatAPI.createSession()
         currentSessionId = response.sessionId
-        localStorage.setItem('chatSession', JSON.stringify({
+        localStorage?.setItem('chatSession', JSON.stringify({
           sessionId: currentSessionId,
           timestamp: now
         }))
@@ -93,6 +103,12 @@ export default function ChatPage() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !sessionId) return
 
+    console.log('🔍 [DEBUG] 메시지 전송 시작:', { 
+      message: newMessage, 
+      sessionId, 
+      userId: user?.id 
+    })
+
     const tempUserMessage = {
       id: `temp-${Date.now()}`,
       message: newMessage,
@@ -107,7 +123,9 @@ export default function ChatPage() {
 
     try {
       // 백엔드에 메시지 전송
-      await chatAPI.sendMessage(sessionId, user?.id || null, messageToSend)
+      console.log('🔍 [DEBUG] chatAPI.sendMessage 호출')
+      const response = await chatAPI.sendMessage(sessionId, user?.id || null, messageToSend)
+      console.log('🔍 [DEBUG] 메시지 전송 응답:', response)
       
       // 전체 채팅 내역 다시 로드 (봇 응답 포함)
       await loadChatHistory(sessionId)
@@ -160,22 +178,40 @@ export default function ChatPage() {
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {chatMessages.map((message) => {
+          const isUser = message.role === 'USER'
+          const isAdmin = message.role === 'ADMIN'
           const isBot = message.role === 'ASSISTANT'
+          
           return (
             <div
               key={message.id}
-              className={`flex ${isBot ? 'justify-start' : 'justify-end'}`}
+              className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                isBot 
-                  ? 'bg-gray-100 text-gray-800' 
-                  : 'bg-red-500 text-white'
-              }`}>
-                <div className="text-sm">{message.message}</div>
-                <div className={`text-xs mt-1 ${
-                  isBot ? 'text-gray-500' : 'text-white/70'
+              <div className="space-y-1">
+                {/* 관리자/봇 메시지인 경우 발신자 표시 */}
+                {(isAdmin || isBot) && (
+                  <div className="text-xs text-gray-500 ml-1">
+                    {isAdmin ? `관리자 ${message.user?.nickname || ''}` : '빅또리 비서'}
+                  </div>
+                )}
+                
+                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                  isUser 
+                    ? 'bg-red-500 text-white' 
+                    : isAdmin
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                    : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {formatTime(message.createdAt)}
+                  <div className="text-sm">{message.message}</div>
+                  <div className={`text-xs mt-1 ${
+                    isUser 
+                      ? 'text-white/70' 
+                      : isAdmin 
+                      ? 'text-blue-600' 
+                      : 'text-gray-500'
+                  }`}>
+                    {formatTime(message.createdAt)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,12 +226,20 @@ export default function ChatPage() {
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                console.log('🔍 [DEBUG] Enter키 눌림')
+                handleSendMessage()
+              }
+            }}
             placeholder="메시지를 입력하세요..."
             className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-red-500"
           />
           <button
-            onClick={handleSendMessage}
+            onClick={() => {
+              console.log('🔍 [DEBUG] 전송 버튼 클릭됨')
+              handleSendMessage()
+            }}
             className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
           >
             <Send className="w-5 h-5" />
