@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, Bot, Send } from 'lucide-react'
+import { chatAPI } from '../../lib/api'
 
 export default function ChatPage() {
   const router = useRouter()

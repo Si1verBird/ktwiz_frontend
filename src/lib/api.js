@@ -52,6 +52,7 @@ export const gameAPI = {
   
   // KT Wiz의 최근 종료된 경기 조회 (메인페이지 game schedule용)
   getKtWizLatestEndedGame: () => apiRequest('/games/kt-wiz/latest-ended'),
+  getKtWizLatestGame: () => apiRequest('/games/kt-wiz/latest-ended'),
   
   // 팀과 상태로 경기 필터링
   getGamesByFilter: (teamIds, statuses) => {
@@ -82,6 +83,9 @@ export const gameAPI = {
   deleteGame: (id) => apiRequest(`/games/${id}`, {
     method: 'DELETE',
   }),
+  
+  // 경기 상세 조회
+  getGameById: (id) => apiRequest(`/games/${id}`),
 }
 
 // 경기장 관련 API
@@ -127,8 +131,32 @@ export const postAPI = {
   // 모든 게시물 조회
   getAllPosts: () => apiRequest('/posts'),
   
+  // 최근 게시물 조회 (최신순)
+  getRecentPosts: (limit = 3) => apiRequest(`/posts/recent?limit=${limit}`),
+  
   // 최근 관리자 게시물 조회 (메인페이지용)
   getRecentAdminPosts: (limit = 3) => apiRequest(`/posts/admin-recent?limit=${limit}`),
+}
+
+// 채팅 관련 API
+export const chatAPI = {
+  // 새로운 채팅 세션 생성
+  createSession: () => apiRequest('/chats/session', {
+    method: 'POST',
+  }),
+  
+  // 세션별 채팅 내역 조회
+  getChatHistory: (sessionId) => apiRequest(`/chats/session/${sessionId}`),
+  
+  // 메시지 전송
+  sendMessage: (sessionId, userId, message) => apiRequest('/chats/message', {
+    method: 'POST',
+    body: JSON.stringify({
+      sessionId,
+      userId,
+      message
+    }),
+  }),
 }
 
 export default {
@@ -138,4 +166,5 @@ export default {
   standingAPI,
   userAPI,
   postAPI,
+  chatAPI,
 }

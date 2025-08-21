@@ -136,36 +136,22 @@ export default function MenuPage() {
           </div>
 
           {/* 관리자 메뉴 - 관리자인 경우에만 표시 */}
-          {user?.isAdmin && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">관리자 메뉴</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {adminItems.map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => router.push(item.path)}
-                    className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow text-left border-2 border-red-100"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={`p-3 rounded-lg ${item.color} mr-4`}>
-                          <item.icon className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{item.title}</h3>
-                          <p className="text-sm text-gray-500">{item.description}</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-              
-              <div className="mt-4 p-4 bg-red-50 rounded-lg">
-                <p className="text-sm text-red-600">
-                  <strong>관리자 전용:</strong> 이 메뉴들은 관리자만 접근할 수 있습니다.
-                </p>
+          {user?.is_admin && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">관리자 메뉴</h3>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => router.push('/admin/games')}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  경기 관리
+                </button>
+                <button
+                  onClick={() => router.push('/wiz-talk')}
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  위즈톡 관리
+                </button>
               </div>
             </div>
           )}

@@ -1,116 +1,145 @@
 'use client'
 
-import { Search, Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
+import { postAPI } from '../../lib/api'
 
 export default function WizTalkPage() {
-  // Mock posts for WizTalk
-  const posts = [
-    {
-      id: 1,
-      author: "KT wiz 공식",
-      isOfficial: true,
-      time: "2시간 전",
-      content: "🏆 KT wiz가 오늘 경기에서 승리했습니다! 팬 여러분의 응원 덕분입니다. 다음 경기도 많은 응원 부탁드립니다! #KTwiz #승리 #감사",
-      likes: 245,
-      comments: 67,
-      image: "bg-gradient-to-r from-red-400 to-pink-400"
-    },
-    {
-      id: 2,
-      author: "야구사랑",
-      isOfficial: false,
-      time: "4시간 전",
-      content: "오늘 경기 정말 짜릿했어요! 9회 역전승 너무 감동적이었습니다 ㅠㅠ 위즈 파이팅!",
-      likes: 89,
-      comments: 23,
-      image: "bg-gray-600"
-    },
-    {
-      id: 3,
-      author: "KT wiz 공식",
-      isOfficial: true,
-      time: "6시간 전",
-      content: "📢 내일 경기 티켓 예매가 시작됩니다! 오전 10시부터 온라인 예매 가능하니 놓치지 마세요!",
-      likes: 156,
-      comments: 34,
-      image: "bg-blue-500"
-    },
-    {
-      id: 4,
-      author: "위즈팬",
-      isOfficial: false,
-      time: "8시간 전",
-      content: "위즈파크 새로운 치킨 먹어봤는데 정말 맛있어요! 추천합니다 👍",
-      likes: 42,
-      comments: 12,
-      image: "bg-yellow-500"
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAllPosts()
+  }, [])
+
+  const fetchAllPosts = async () => {
+    try {
+      setLoading(true)
+      const data = await postAPI.getAllPosts()
+      setPosts(data || [])
+    } catch (error) {
+      console.error('게시물을 가져오는데 실패했습니다:', error)
+      setPosts([])
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
+    
+    if (diffInHours < 1) return '방금 전'
+    if (diffInHours < 24) return `${diffInHours}시간 전`
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}일 전`
+    
+    return date.toLocaleDateString('ko-KR')
+  }
+
+  const getCategoryText = (category) => {
+    switch (category) {
+      case 'news': return '뉴스'
+      case 'highlight': return '하이라이트'
+      case 'story': return '일반'
+      case 'photo': return '사진'
+      case 'live': return '라이브'
+      default: return category
+    }
+  }
+
+  const getCategoryColor = (category) => {
+    switch (category) {
+      case 'news': return 'bg-blue-500'
+      case 'highlight': return 'bg-red-500'
+      case 'story': return 'bg-green-500'
+      case 'photo': return 'bg-purple-500'
+      case 'live': return 'bg-orange-500'
+      default: return 'bg-gray-500'
+    }
+  }
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">게시물을 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>
-      <div className="flex-1 bg-gray-50 overflow-y-auto">
-        <div className="px-4 pt-4">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg">위즈톡</h3>
-            <button className="flex items-center text-gray-500 text-sm">
-              <Search className="w-4 h-4 mr-1" />
-              검색
-            </button>
-          </div>
-
-          {/* Posts Feed */}
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <div key={post.id} className="bg-white rounded-2xl p-4 shadow-sm">
-                {/* Post Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 ${post.image} rounded-full flex items-center justify-center`}>
-                      <div className="text-white text-xs font-bold">
-                        {post.isOfficial ? "KT" : post.author[0]}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">위즈톡</h1>
+          
+          {posts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">아직 게시물이 없습니다.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <div key={post.id} className="bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full ${getCategoryColor(post.category)} flex items-center justify-center text-white text-sm font-medium`}>
+                        {getCategoryText(post.category).charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {post.author?.name || '알 수 없음'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatTime(post.createdAt)}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">{post.author}</span>
-                        {post.isOfficial && (
-                          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">공식</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">{post.time}</div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(post.category)} text-white`}>
+                      {getCategoryText(post.category)}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    {post.title}
+                  </h3>
+                  
+                  <p className="text-gray-700 mb-4 leading-relaxed">
+                    {post.body}
+                  </p>
+                  
+                  {post.thumbnail && (
+                    <div className="mb-4">
+                      <img 
+                        src={post.thumbnail} 
+                        alt={post.title}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center space-x-4">
+                      <span>좋아요 0</span>
+                      <span>댓글 0</span>
+                    </div>
+                    <div className="text-xs">
+                      {post.updatedAt && post.updatedAt !== post.createdAt && '수정됨'}
                     </div>
                   </div>
-                  <button>
-                    <MoreHorizontal className="w-5 h-5 text-gray-400" />
-                  </button>
                 </div>
-
-                {/* Post Content */}
-                <div className="mb-4">
-                  <p className="text-sm text-gray-800">{post.content}</p>
-                </div>
-
-                {/* Post Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <div className="flex items-center space-x-4">
-                    <button className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors">
-                      <Heart className="w-4 h-4" />
-                      <span className="text-xs">{post.likes}</span>
-                    </button>
-                    <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors">
-                      <MessageCircle className="w-4 h-4" />
-                      <span className="text-xs">{post.comments}</span>
-                    </button>
-                  </div>
-                  <button className="text-gray-500 hover:text-green-500 transition-colors">
-                    <Share2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

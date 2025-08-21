@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Filter, X } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { gameAPI, teamAPI } from '../../lib/api'
+import { useRouter } from 'next/navigation'
 
 export default function SchedulePage() {
   const [games, setGames] = useState([])
@@ -11,18 +12,31 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   
-  // 필터 상태
-  const [selectedTeams, setSelectedTeams] = useState([])
-  const [selectedStatuses, setSelectedStatuses] = useState([])
-  const [showFilters, setShowFilters] = useState(false)
+  // 새로운 필터 상태
+  const [showKtWizOnly, setShowKtWizOnly] = useState(true)
+  const [showPastGamesOnly, setShowPastGamesOnly] = useState(true)
+  
+  // 사용자 정보
+  const [user, setUser] = useState(null)
+  
+  // 삭제 확인 상태
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, gameId: null, gameName: '' })
 
   // KT Wiz ID
   const KT_WIZ_ID = '20000000-0000-0000-0000-000000000008'
 
+  const router = useRouter()
+
   useEffect(() => {
+    // 사용자 정보 로드
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    }
+    
     fetchTeams()
     fetchGamesWithFilter()
-  }, [selectedTeams, selectedStatuses])
+  }, [showKtWizOnly, showPastGamesOnly])
 
   const fetchTeams = async () => {
     try {
@@ -36,47 +50,47 @@ export default function SchedulePage() {
   const fetchGamesWithFilter = async () => {
     try {
       setLoading(true)
-      let data
       
-      // 기본값: KT Wiz가 참여하는 경기
-      if (selectedTeams.length === 0 && selectedStatuses.length === 0) {
-        data = await gameAPI.getGamesByFilter([KT_WIZ_ID], [])
-      } else {
-        data = await gameAPI.getGamesByFilter(selectedTeams, selectedStatuses)
-      }
+      // 필터 조건 설정
+      const teamsToFilter = showKtWizOnly ? [KT_WIZ_ID] : []
+      const statusesToFilter = showPastGamesOnly ? ['ended'] : []
       
-      setGames(data)
+      const data = await gameAPI.getGamesByFilter(teamsToFilter, statusesToFilter)
+      setGames(data || [])
     } catch (error) {
       console.error('경기 정보를 가져오는데 실패했습니다:', error)
+      setGames([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleTeamToggle = (teamId) => {
-    setSelectedTeams(prev => {
-      if (prev.includes(teamId)) {
-        return prev.filter(id => id !== teamId)
-      } else if (prev.length < 2) {
-        return [...prev, teamId]
-      }
-      return prev
-    })
+  const toggleKtWizOnly = () => {
+    setShowKtWizOnly(!showKtWizOnly)
   }
 
-  const handleStatusToggle = (status) => {
-    setSelectedStatuses(prev => {
-      if (prev.includes(status)) {
-        return prev.filter(s => s !== status)
-      } else {
-        return [...prev, status]
-      }
-    })
+  const togglePastGamesOnly = () => {
+    setShowPastGamesOnly(!showPastGamesOnly)
   }
 
-  const clearFilters = () => {
-    setSelectedTeams([])
-    setSelectedStatuses([])
+  const handleDeleteGame = (gameId, gameName) => {
+    setDeleteConfirm({ show: true, gameId, gameName })
+  }
+
+  const confirmDelete = async () => {
+    try {
+      await gameAPI.deleteGame(deleteConfirm.gameId)
+      // 삭제 후 경기 목록 새로고침
+      fetchGamesWithFilter()
+      setDeleteConfirm({ show: false, gameId: null, gameName: '' })
+    } catch (error) {
+      console.error('경기 삭제 실패:', error)
+      alert('경기 삭제에 실패했습니다.')
+    }
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, gameId: null, gameName: '' })
   }
 
   const formatDate = (dateString) => {
@@ -161,93 +175,51 @@ export default function SchedulePage() {
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-2 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm"
-            >
-              <Filter className="w-4 h-4" />
-              <span>필터</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              {/* 관리자 경기 추가 버튼 */}
+              {user?.is_admin && (
+                <button
+                  onClick={() => router.push('/admin/add-game')}
+                  className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors"
+                >
+                  경기 추가
+                </button>
+              )}
+              
+              {/* KT Wiz만 보기 토글 */}
+              <button
+                onClick={toggleKtWizOnly}
+                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                  showKtWizOnly 
+                    ? 'bg-red-500 text-white hover:bg-red-600' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                KT wiz만 보기
+              </button>
+              
+              {/* 지난 경기만 보기 토글 */}
+              <button
+                onClick={togglePastGamesOnly}
+                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                  showPastGamesOnly 
+                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                지난 경기만 보기
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="bg-white px-4 py-4 border-b border-gray-200">
-            <div className="space-y-4">
-              {/* Team Selection */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  참여 팀 선택 (최대 2개)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {teams.map((team) => (
-                    <button
-                      key={team.id}
-                      onClick={() => handleTeamToggle(team.id)}
-                      className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
-                        selectedTeams.includes(team.id)
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
-                      }`}
-                      disabled={!selectedTeams.includes(team.id) && selectedTeams.length >= 2}
-                    >
-                      {team.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {/* Status Selection */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  경기 상태 선택
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: 'scheduled', label: '경기예정' },
-                    { value: 'in_progress', label: '경기중' },
-                    { value: 'ended', label: '경기종료' }
-                  ].map((status) => (
-                    <button
-                      key={status.value}
-                      onClick={() => handleStatusToggle(status.value)}
-                      className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
-                        selectedStatuses.includes(status.value)
-                          ? 'bg-green-500 text-white border-green-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-green-300'
-                      }`}
-                    >
-                      {status.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filter Actions */}
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  필터 초기화
-                </button>
-                <div className="text-sm text-gray-500">
-                  {selectedTeams.length > 0 && `팀 ${selectedTeams.length}개 선택`}
-                  {selectedTeams.length > 0 && selectedStatuses.length > 0 && ' / '}
-                  {selectedStatuses.length > 0 && `상태 ${selectedStatuses.length}개 선택`}
-                  {selectedTeams.length === 0 && selectedStatuses.length === 0 && 'KT Wiz 경기 표시 중'}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Games List */}
         <div className="px-4 pt-4">
           {games.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {selectedTeams.length > 0 || selectedStatuses.length > 0 
+              {(!showKtWizOnly || !showPastGamesOnly)
                 ? '필터 조건에 맞는 경기가 없습니다' 
                 : '등록된 경기가 없습니다'}
             </div>
@@ -258,7 +230,29 @@ export default function SchedulePage() {
               const resultText = getResultText(game)
               
               return (
-                <div key={game.id} className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
+                <div key={game.id} className="bg-white rounded-2xl p-4 mb-4 shadow-sm relative">
+                  {/* 관리자 버튼들 */}
+                  {user?.is_admin && (
+                    <div className="absolute top-3 right-3 flex space-x-2">
+                      {/* 수정 버튼 */}
+                      <button
+                        onClick={() => router.push(`/admin/games/${game.id}/edit`)}
+                        className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors"
+                        title="경기 수정"
+                      >
+                        ✎
+                      </button>
+                      {/* 삭제 버튼 */}
+                      <button
+                        onClick={() => handleDeleteGame(game.id, `${game.awayTeam.name} vs ${game.homeTeam.name}`)}
+                        className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        title="경기 삭제"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <div className="text-gray-600 text-sm">
@@ -306,6 +300,32 @@ export default function SchedulePage() {
           )}
         </div>
       </div>
+
+      {/* 삭제 확인 다이얼로그 */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">경기 삭제 확인</h3>
+            <p className="text-gray-600 mb-6">
+              <strong>{deleteConfirm.gameName}</strong> 경기를 삭제하시겠습니까?
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                삭제
+              </button>
+              <button
+                onClick={cancelDelete}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }

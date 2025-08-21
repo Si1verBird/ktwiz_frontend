@@ -9,7 +9,6 @@ import { gameAPI, standingAPI, postAPI } from '../lib/api'
 
 export default function HomePage() {
   const router = useRouter()
-  const [currentSlide, setCurrentSlide] = useState(0)
   const [user, setUser] = useState(null) // 로그인한 사용자 정보
   const [nextGame, setNextGame] = useState(null)
   const [ktWizLatestGame, setKtWizLatestGame] = useState(null) // KT Wiz 최근 종료된 경기
@@ -58,11 +57,11 @@ export default function HomePage() {
         fetchNextGame(),
         fetchKtWizLatestGame(),
         fetchTeamStanding(),
-        // fetchRecentPosts() // 임시로 비활성화
+        fetchRecentPosts()
       ])
       console.log('🔍 [DEBUG] API 호출 완료')
       // 기본 슬라이드 설정
-      setNewsSlides(getDefaultSlides())
+      // setNewsSlides(getDefaultSlides()) // 더미 슬라이드 제거
       console.log('🔍 [DEBUG] 기본 슬라이드 설정 완료')
     } catch (error) {
       console.error('🔍 [DEBUG] 데이터 로딩 실패:', error)
@@ -109,50 +108,28 @@ export default function HomePage() {
 
   const fetchRecentPosts = async () => {
     try {
-      const data = await postAPI.getRecentAdminPosts(3)
-      // 게시물이 없으면 기본 슬라이드 사용
+      const data = await postAPI.getRecentPosts(3)
+      // 게시물이 있으면 슬라이드 생성
       if (data && data.length > 0) {
         const slides = data.map((post, index) => ({
           id: post.id,
           title: post.title,
           content: post.body?.substring(0, 100) + '...' || '',
-          image: `bg-gradient-to-r ${index % 3 === 0 ? 'from-red-400 to-pink-400' : index % 3 === 1 ? 'from-blue-400 to-purple-400' : 'from-green-400 to-blue-400'}`,
-          tag: post.category === 'news' ? '뉴스' : post.category === 'highlight' ? '하이라이트' : '소식'
+          image: post.thumbnail || `bg-gradient-to-r ${index % 3 === 0 ? 'from-red-400 to-pink-400' : index % 3 === 1 ? 'from-blue-400 to-purple-400' : 'from-green-400 to-blue-400'}`,
+          tag: post.category === 'news' ? '뉴스' : post.category === 'highlight' ? '하이라이트' : post.category === 'story' ? '일반' : '소식'
         }))
         setNewsSlides(slides)
       } else {
-        // 기본 슬라이드 설정
-        setNewsSlides(getDefaultSlides())
+        // 게시물이 없으면 빈 배열
+        setNewsSlides([])
       }
     } catch (error) {
       console.error('게시물 정보를 가져오는데 실패했습니다:', error)
-      setNewsSlides(getDefaultSlides())
+      setNewsSlides([])
     }
   }
 
-  const getDefaultSlides = () => [
-    {
-      id: 1,
-      title: "KT wiz 8월 홈경기 티켓 오픈!",
-      content: "8월 홈경기 티켓이 오픈되었습니다. 지금 바로 예매하세요!",
-      image: "bg-gradient-to-r from-red-400 to-pink-400",
-      tag: "티켓 오픈"
-    },
-    {
-      id: 2,
-      title: "선수단 응원 이벤트",
-      content: "우리 선수들을 위한 특별한 응원 이벤트에 참여해보세요.",
-      image: "bg-gradient-to-r from-blue-400 to-purple-400",
-      tag: "이벤트"
-    },
-    {
-      id: 3,
-      title: "위즈파크 새로운 먹거리",
-      content: "위즈파크에 새로운 먹거리가 추가되었습니다.",
-      image: "bg-gradient-to-r from-green-400 to-blue-400",
-      tag: "맛집"
-    }
-  ]
+  const getDefaultSlides = () => []
 
   const handleLogout = () => {
     localStorage.removeItem('user')
@@ -189,10 +166,24 @@ export default function HomePage() {
                           {/* 로그인/로그아웃 버튼 */}
             {mounted && user ? (
               <div className="flex flex-col items-end space-y-1">
-                {user.isAdmin && (
-                  <span className="text-xs px-2 py-1 rounded bg-white/30 backdrop-blur-sm">
-                    관리자
-                  </span>
+                {user.is_admin && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 className="text-lg font-semibold text-blue-800 mb-2">관리자 메뉴</h3>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => router.push('/admin/games')}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        경기 관리
+                      </button>
+                      <button
+                        onClick={() => router.push('/wiz-talk')}
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        위즈톡 관리
+                      </button>
+                    </div>
+                  </div>
                 )}
                 <button 
                   onClick={handleLogout}
@@ -251,6 +242,65 @@ export default function HomePage() {
                 <div className="w-12 h-4 bg-white/30 rounded animate-pulse"></div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Season Status Section */}
+      <div className="px-4 pt-4">
+        <div className="relative rounded-2xl h-54 overflow-hidden">
+          {/* 배경 이미지 */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: 'url(https://cdnweb01.wikitree.co.kr/webdata/editor/202410/03/img_20241003174617_400e0cfe.webp)',
+              backgroundPosition: 'center 30%'
+            }}
+          ></div>
+          
+          {/* 어두운 필터 */}
+          <div className="absolute inset-0 bg-black/60"></div>
+          
+          {/* 컨텐츠 */}
+          <div className="relative h-full flex items-center p-6 text-white">
+            <div className="flex items-center justify-between w-full">
+              {/* Left Side - Baseball (스위치됨) */}
+              <div className="w-20 h-20 flex items-center justify-center">
+                <img 
+                  src="https://i.namu.wiki/i/1I_O46xxWGvTC-arPbfuBwaYgmd0I9gOCfTSchy5Hf5zZ-blf38j7boUFED_abbT5R8Qsj_Ynb-b7x4zxPk4HQ.svg" 
+                  alt="Baseball Icon"
+                  className="w-16 h-16 filter invert"
+                />
+              </div>
+
+              {/* Center - Season Record */}
+              <div className="flex-1 text-center px-4">
+                {teamStanding ? (
+                  <>
+                    <div className="text-xl font-medium mb-2">
+                      {teamStanding.wins}승 {teamStanding.losses}패
+                    </div>
+                    <div className="text-sm text-white/90">
+                      총 {teamStanding.gamesPlayed}경기, 승률 {teamStanding.winRate.toFixed(3)}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xl font-medium mb-2">시즌 기록</div>
+                    <div className="text-sm text-white/90">데이터 로딩 중...</div>
+                  </>
+                )}
+              </div>
+
+              {/* Right Side - Team Ranking (스위치됨) */}
+              <div className="flex flex-col">
+                <div className="text-sm text-white/80 mb-2">팀 순위</div>
+                <div className="flex items-baseline space-x-1">
+                  <div className="text-5xl font-bold">{teamStanding?.rank || '-'}</div>
+                  <div className="text-lg">위</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -336,7 +386,7 @@ export default function HomePage() {
             </button>
             
             {/* 관리자 경기 추가 버튼 */}
-            {mounted && user?.isAdmin && (
+            {mounted && user?.is_admin && (
               <button 
                 onClick={() => router.push("/admin/add-game")}
                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm transition-colors"
@@ -348,93 +398,70 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Season Status Section */}
-      <div className="px-4 pt-4">
-        <div className="bg-gradient-to-r from-red-400 via-purple-500 to-blue-400 rounded-2xl p-6 text-white relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            {/* Left Side - Team Ranking */}
-            <div className="flex flex-col">
-              <div className="text-sm text-white/80 mb-2">팀 순위</div>
-              <div className="flex items-baseline space-x-1">
-                <div className="text-5xl font-bold">{teamStanding?.rank || '-'}</div>
-                <div className="text-lg">위</div>
-              </div>
-            </div>
 
-            {/* Center - Season Record */}
-            <div className="flex-1 text-center px-4">
-              {teamStanding ? (
-                <>
-                  <div className="text-xl font-medium mb-2">
-                    {teamStanding.wins}승 {teamStanding.losses}패
-                  </div>
-                  <div className="text-sm text-white/90">
-                    총 {teamStanding.gamesPlayed}경기, 승률 {teamStanding.winRate.toFixed(3)}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="text-xl font-medium mb-2">시즌 기록</div>
-                  <div className="text-sm text-white/90">데이터 로딩 중...</div>
-                </>
-              )}
-            </div>
-
-            {/* Right Side - Baseball */}
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-              <div className="w-12 h-12 bg-white rounded-full"></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* News Slider Section */}
       <div className="px-4 pt-6 pb-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg">wiz 소식</h3>
+          <h3 className="text-lg font-semibold text-gray-900">wiz 소식</h3>
           <button 
             onClick={() => router.push("/wiz-talk")}
-            className="flex items-center text-gray-500 text-sm"
+            className="flex items-center text-gray-500 text-sm hover:text-gray-700 transition-colors"
           >
             더보기 <ChevronRight className="w-4 h-4 ml-1" />
           </button>
         </div>
 
-        <div className="relative">
-          <div className="overflow-hidden rounded-2xl">
-            <div 
-              className="flex transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-              {newsSlides.map((slide, index) => (
-                <div key={slide.id} className="w-full flex-shrink-0">
-                  <div className={`${slide.image} rounded-2xl h-48 flex items-center justify-center relative overflow-hidden`}>
-                    <div className="text-center text-white relative z-10">
-                      <div className="bg-white/20 text-white px-3 py-1 rounded text-xs mb-4 inline-block">
-                        {slide.tag}
+        {newsSlides.length > 0 ? (
+          <div className="space-y-4">
+            {newsSlides.map((slide) => (
+              <div key={slide.id} className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex items-start space-x-4">
+                  {/* 썸네일 이미지 또는 기본 아이콘 */}
+                  <div className="flex-shrink-0">
+                    {slide.image && slide.image.startsWith('http') ? (
+                      <img 
+                        src={slide.image} 
+                        alt={slide.title}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className={`w-16 h-16 ${slide.image} rounded-lg flex items-center justify-center`}>
+                        <div className="text-white font-bold text-xs text-center">
+                          {slide.tag?.charAt(0) || 'W'}
+                        </div>
                       </div>
-                      <div className="text-xl font-bold mb-2">{slide.title}</div>
-                      <div className="text-sm px-4">{slide.content}</div>
+                    )}
+                  </div>
+                  
+                  {/* 게시물 내용 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        slide.tag === '뉴스' ? 'bg-blue-100 text-blue-800' :
+                        slide.tag === '하이라이트' ? 'bg-red-100 text-red-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {slide.tag}
+                      </span>
                     </div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {slide.title}
+                    </h4>
+                    <p className="text-gray-700 text-sm leading-relaxed line-clamp-2">
+                      {slide.content}
+                    </p>
                   </div>
                 </div>
-              ))}
-          </div>
-        </div>
-
-          {/* Slide indicators */}
-          <div className="flex justify-center mt-4 space-x-2">
-            {newsSlides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  currentSlide === index ? 'bg-red-500' : 'bg-gray-300'
-                }`}
-              />
+              </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+            <div className="text-gray-500 text-lg">아직 게시물이 없습니다.</div>
+            <p className="text-gray-400 text-sm mt-2">새로운 소식을 기다려주세요!</p>
+          </div>
+        )}
       </div>
       </div>
     </Layout>
