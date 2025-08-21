@@ -159,7 +159,7 @@ export default function HomePage() {
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-2xl mb-2">
-                  {user ? `${user.nickname}님` : '게스트님'}
+                  {mounted && user ? `${user.nickname}님` : '게스트님'}
                 </div>
                 <div className="text-lg">오늘도 함께 응원해요!</div>
               </div>
@@ -169,20 +169,12 @@ export default function HomePage() {
                 {user.is_admin && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                     <h3 className="text-lg font-semibold text-blue-800 mb-2">관리자 메뉴</h3>
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => router.push('/admin/games')}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                      >
-                        경기 관리
-                      </button>
-                      <button
-                        onClick={() => router.push('/wiz-talk')}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-                      >
-                        위즈톡 관리
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => router.push('/admin/games')}
+                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      경기 관리(관리자용)
+                    </button>
                   </div>
                 )}
                 <button 
@@ -221,13 +213,23 @@ export default function HomePage() {
             
             {/* 로그인 상태에 따라 다른 버튼 표시 */}
             {mounted && user ? (
-              <button 
-                onClick={() => router.push("/my-wiz")}
-                className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2"
-              >
-                <Search className="w-6 h-6 text-white" />
-                <span className="text-sm">MY위즈</span>
-              </button>
+              user.is_admin ? (
+                <button 
+                  onClick={() => router.push("/schedule")}
+                  className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2"
+                >
+                  <Search className="w-6 h-6 text-white" />
+                  <span className="text-sm">경기 관리(관리자용)</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => router.push("/my-wiz")}
+                  className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2"
+                >
+                  <Search className="w-6 h-6 text-white" />
+                  <span className="text-sm">MY위즈</span>
+                </button>
+              )
             ) : mounted ? (
               <button 
                 onClick={() => router.push("/login")}

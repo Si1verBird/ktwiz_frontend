@@ -18,6 +18,7 @@ export default function SchedulePage() {
   
   // 사용자 정보
   const [user, setUser] = useState(null)
+  const [mounted, setMounted] = useState(false)
   
   // 삭제 확인 상태
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, gameId: null, gameName: '' })
@@ -28,15 +29,26 @@ export default function SchedulePage() {
   const router = useRouter()
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    
     // 사용자 정보 로드
     const userData = localStorage.getItem('user')
     if (userData) {
-      setUser(JSON.parse(userData))
+      const parsedUser = JSON.parse(userData)
+      console.log('🔍 [DEBUG] Schedule - 사용자 정보:', parsedUser)
+      console.log('🔍 [DEBUG] Schedule - 관리자 여부:', parsedUser?.is_admin)
+      setUser(parsedUser)
+    } else {
+      console.log('🔍 [DEBUG] Schedule - 로그인된 사용자 없음')
     }
     
     fetchTeams()
     fetchGamesWithFilter()
-  }, [showKtWizOnly, showPastGamesOnly])
+  }, [mounted, showKtWizOnly, showPastGamesOnly])
 
   const fetchTeams = async () => {
     try {
@@ -52,8 +64,27 @@ export default function SchedulePage() {
       setLoading(true)
       
       // 필터 조건 설정
-      const teamsToFilter = showKtWizOnly ? [KT_WIZ_ID] : []
-      const statusesToFilter = showPastGamesOnly ? ['ended'] : []
+      let teamsToFilter = []
+      let statusesToFilter = []
+      
+      // KT Wiz만 보기가 켜져있으면 KT Wiz만, 아니면 모든 팀
+      if (showKtWizOnly) {
+        teamsToFilter = [KT_WIZ_ID]
+      }
+      
+      // 지난 경기만 보기가 켜져있으면 종료된 경기만, 아니면 모든 상태
+      if (showPastGamesOnly) {
+        statusesToFilter = ['ended']
+      } else {
+        statusesToFilter = ['scheduled', 'in_progress', 'ended']
+      }
+      
+      console.log('🔍 [DEBUG] 필터 조건:', { 
+        teamsToFilter, 
+        statusesToFilter, 
+        showKtWizOnly, 
+        showPastGamesOnly 
+      })
       
       const data = await gameAPI.getGamesByFilter(teamsToFilter, statusesToFilter)
       setGames(data || [])
@@ -111,10 +142,6 @@ export default function SchedulePage() {
         return { text: '경기예정', color: 'bg-red-500' }
       case 'in_progress':
         return { text: '경기중', color: 'bg-green-500' }
-      case 'postponed':
-        return { text: '연기', color: 'bg-yellow-500' }
-      case 'cancelled':
-        return { text: '취소', color: 'bg-gray-500' }
       default:
         return { text: '알 수 없음', color: 'bg-gray-400' }
     }
@@ -133,21 +160,38 @@ export default function SchedulePage() {
     else return '무승부'
   }
 
-  const getTeamColor = (teamName) => {
-    const teamColors = {
-      'KT Wiz': 'bg-black',
-      'LG Twins': 'bg-red-600',
-      'SSG Landers': 'bg-red-500',
-      'Samsung Lions': 'bg-blue-600',
-      'Doosan Bears': 'bg-green-600',
-      'KIA Tigers': 'bg-red-700',
-      'Lotte Giants': 'bg-red-400',
-      'Hanwha Eagles': 'bg-orange-500',
-      'NC Dinos': 'bg-blue-600',
-      'Kiwoom Heroes': 'bg-yellow-600'
-    }
-    return teamColors[teamName] || 'bg-gray-500'
+  const getKtWizResultColor = (game) => {
+    if (game.status !== 'ended') return 'text-gray-700'
+    
+    const ktWizId = '20000000-0000-0000-0000-000000000008'
+    const isKtWizGame = game.homeTeam.id === ktWizId || game.awayTeam.id === ktWizId
+    
+    if (!isKtWizGame) return 'text-gray-700'
+    
+    const isKtWizHome = game.homeTeam.id === ktWizId
+    const ktWizScore = isKtWizHome ? game.homeScore : game.awayScore
+    const opponentScore = isKtWizHome ? game.awayScore : game.homeScore
+    
+    if (ktWizScore > opponentScore) return 'text-red-600 font-bold' // 승리 - 빨간색
+    else if (ktWizScore < opponentScore) return 'text-blue-600 font-bold' // 패배 - 파란색
+    else return 'text-green-600 font-bold' // 무승부 - 초록색
   }
+
+  // const getTeamColor = (teamName) => {
+  //   const teamColors = {
+  //     'KT Wiz': 'bg-black',
+  //     'LG Twins': 'bg-red-600',
+  //     'SSG Landers': 'bg-red-500',
+  //     'Samsung Lions': 'bg-blue-600',
+  //     'Doosan Bears': 'bg-green-600',
+  //     'KIA Tigers': 'bg-red-700',
+  //     'Lotte Giants': 'bg-red-400',
+  //     'Hanwha Eagles': 'bg-orange-500',
+  //     'NC Dinos': 'bg-blue-600',
+  //     'Kiwoom Heroes': 'bg-yellow-600'
+  //   }
+  //   return teamColors[teamName] || 'bg-gray-500'
+  // }
 
   if (loading) {
     return (
@@ -175,45 +219,57 @@ export default function SchedulePage() {
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </div>
-            <div className="flex items-center space-x-3">
-              {/* 관리자 경기 추가 버튼 */}
-              {user?.is_admin && (
+            <div className="flex items-center space-x-3">             
+
+              
+              {/* KT Wiz만 보기 스위치 */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">KT wiz만</span>
                 <button
-                  onClick={() => router.push('/admin/add-game')}
-                  className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors"
+                  onClick={toggleKtWizOnly}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    showKtWizOnly ? 'bg-blue-500' : 'bg-gray-300'
+                  }`}
                 >
-                  경기 추가
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showKtWizOnly ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
-              )}
+              </div>
               
-              {/* KT Wiz만 보기 토글 */}
-              <button
-                onClick={toggleKtWizOnly}
-                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                  showKtWizOnly 
-                    ? 'bg-red-500 text-white hover:bg-red-600' 
-                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                }`}
-              >
-                KT wiz만 보기
-              </button>
-              
-              {/* 지난 경기만 보기 토글 */}
-              <button
-                onClick={togglePastGamesOnly}
-                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                  showPastGamesOnly 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                }`}
-              >
-                지난 경기만 보기
-              </button>
+              {/* 지난 경기만 보기 스위치 */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">지난 경기만</span>
+                <button
+                  onClick={togglePastGamesOnly}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    showPastGamesOnly ? 'bg-blue-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showPastGamesOnly ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-
+        {/* 관리자 경기 추가 버튼 */}
+        {mounted && user?.is_admin && (
+          <div className="px-4 py-3 bg-gray-50">
+            <button
+              onClick={() => router.push('/admin/add-game')}
+              className="w-full bg-green-500 text-white py-3 rounded-lg text-sm hover:bg-green-600 transition-colors font-medium"
+            >
+              + 경기 추가
+            </button>
+          </div>
+        )}
 
         {/* Games List */}
         <div className="px-4 pt-4">
@@ -232,7 +288,7 @@ export default function SchedulePage() {
               return (
                 <div key={game.id} className="bg-white rounded-2xl p-4 mb-4 shadow-sm relative">
                   {/* 관리자 버튼들 */}
-                  {user?.is_admin && (
+                  {mounted && user?.is_admin && (
                     <div className="absolute top-3 right-3 flex space-x-2">
                       {/* 수정 버튼 */}
                       <button
@@ -253,7 +309,10 @@ export default function SchedulePage() {
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center mb-3">
+                    <div className={`${statusBadge.color} text-white px-2 py-1 rounded text-xs mr-3`}>
+                      {statusBadge.text}
+                    </div>
                     <div>
                       <div className="text-gray-600 text-sm">
                         {dateInfo.day}({dateInfo.weekday}) {dateInfo.time}
@@ -262,35 +321,59 @@ export default function SchedulePage() {
                         {game.venue?.name || '경기장 정보 없음'}
                       </div>
                     </div>
-                    <div className={`${statusBadge.color} text-white px-2 py-1 rounded text-xs`}>
-                      {statusBadge.text}
-                    </div>
                   </div>
 
-                  <div className="flex items-center justify-center">
-                    <div className="flex items-center">
-                      <div className={`w-12 h-12 ${getTeamColor(game.awayTeam.name)} rounded-full flex items-center justify-center mr-3`}>
-                        <div className="text-white text-xs font-bold">
-                          {game.awayTeam.shortName || game.awayTeam.name.slice(0, 2)}
-                        </div>
+                  <div className="flex items-center justify-between px-4">
+                    {/* 원정팀 */}
+                    <div className="flex flex-col items-center flex-1">
+                      {/* 원정팀 로고 */}
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-white ">
+                        {game.awayTeam.logoUrl ? (
+                          <img 
+                            src={game.awayTeam.logoUrl} 
+                            alt={game.awayTeam.name}
+                            className="w-14 h-14 object-contain"
+                          />
+                        ) : (
+                          <div className="text-gray-600 text-sm font-bold">
+                            {game.awayTeam.shortName || game.awayTeam.name.slice(0, 2)}
+                          </div>
+                        )}
                       </div>
-                      <div className={`text-2xl font-bold mr-4 ${game.status === 'ended' ? '' : 'text-gray-400'}`}>
+                      <div className="text-xs text-gray-600 text-center mb-1">{game.awayTeam.name}</div>
+                      <div className={`text-2xl font-bold ${game.status === 'ended' ? getKtWizResultColor(game) : 'text-gray-400'}`}>
                         {game.status === 'ended' ? game.awayScore : '0'}
                       </div>
                     </div>
 
-                    <div className="px-4">
-                      <div className="text-gray-500 text-sm">{resultText}</div>
+                    {/* 가운데 vs 및 결과 */}
+                    <div className="flex flex-col items-center px-6">
+                      <div className="text-lg font-bold text-gray-500 mb-1">vs</div>
+                      <div className={`text-sm font-medium ${getKtWizResultColor(game)}`}>{resultText}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {game.status === 'ended' && game.inning && `${game.inning}회`}
+                      </div>
                     </div>
 
-                    <div className="flex items-center">
-                      <div className={`text-2xl font-bold ml-4 ${game.status === 'ended' ? '' : 'text-gray-400'}`}>
-                        {game.status === 'ended' ? game.homeScore : '0'}
+                    {/* 홈팀 */}
+                    <div className="flex flex-col items-center flex-1">
+                      {/* 홈팀 로고 */}
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-white ">
+                        {game.homeTeam.logoUrl ? (
+                          <img 
+                            src={game.homeTeam.logoUrl} 
+                            alt={game.homeTeam.name}
+                            className="w-14 h-14 object-contain"
+                          />
+                        ) : (
+                          <div className="text-gray-600 text-sm font-bold">
+                            {game.homeTeam.shortName || game.homeTeam.name.slice(0, 2)}
+                          </div>
+                        )}
                       </div>
-                      <div className={`w-12 h-12 ${getTeamColor(game.homeTeam.name)} rounded-full flex items-center justify-center ml-3`}>
-                        <div className="text-white text-xs font-bold">
-                          {game.homeTeam.shortName || game.homeTeam.name.slice(0, 2)}
-                        </div>
+                      <div className="text-xs text-gray-600 text-center mb-1">{game.homeTeam.name}</div>
+                      <div className={`text-2xl font-bold ${game.status === 'ended' ? getKtWizResultColor(game) : 'text-gray-400'}`}>
+                        {game.status === 'ended' ? game.homeScore : '0'}
                       </div>
                     </div>
                   </div>

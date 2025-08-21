@@ -19,14 +19,21 @@ import Layout from '../../components/Layout'
 export default function MenuPage() {
   const router = useRouter()
   const [user, setUser] = useState(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // 로그인 상태 확인
   useEffect(() => {
+    if (!mounted) return
+    
     const userData = localStorage.getItem('user')
     if (userData) {
       setUser(JSON.parse(userData))
     }
-  }, [])
+  }, [mounted])
 
   const menuItems = [
     {
@@ -136,7 +143,7 @@ export default function MenuPage() {
           </div>
 
           {/* 관리자 메뉴 - 관리자인 경우에만 표시 */}
-          {user?.is_admin && (
+          {mounted && user?.is_admin && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-semibold text-blue-800 mb-2">관리자 메뉴</h3>
               <div className="flex space-x-3">

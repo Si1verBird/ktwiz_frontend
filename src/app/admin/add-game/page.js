@@ -103,7 +103,7 @@ export default function AddGamePage() {
       }
 
       // 경기가 종료된 경우에만 점수와 이닝 정보 포함
-      if (formData.status === 'ENDED') {
+      if (formData.status === 'ended') {
         gameData.inning = parseInt(formData.inning) || 9
         gameData.homeScore = parseInt(formData.homeScore) || 0
         gameData.awayScore = parseInt(formData.awayScore) || 0
@@ -123,9 +123,9 @@ export default function AddGamePage() {
   // teams 배열은 useState로 관리됨 (위에서 선언)
 
   const gameStatuses = [
-    { value: 'SCHEDULED', label: '예정' },
-    { value: 'LIVE', label: '진행중' },
-    { value: 'ENDED', label: '종료' }
+    { value: 'scheduled', label: '예정' },
+    { value: 'in_progress', label: '진행중' },
+    { value: 'ended', label: '종료' }
   ]
 
   return (
@@ -267,12 +267,12 @@ export default function AddGamePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        어웨이팀 점수
+                        홈팀 점수
                       </label>
                       <input
                         type="number"
-                        name="awayScore"
-                        value={formData.awayScore}
+                        name="homeScore"
+                        value={formData.homeScore}
                         onChange={handleInputChange}
                         min="0"
                         placeholder="0"
@@ -281,12 +281,12 @@ export default function AddGamePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        홈팀 점수
+                        어웨이팀 점수
                       </label>
                       <input
                         type="number"
-                        name="homeScore"
-                        value={formData.homeScore}
+                        name="awayScore"
+                        value={formData.awayScore}
                         onChange={handleInputChange}
                         min="0"
                         placeholder="0"
