@@ -26,7 +26,18 @@ const apiRequest = async (endpoint, options = {}) => {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
     
-    return await response.json()
+    // DELETE 요청이나 204 No Content 응답의 경우 JSON 파싱하지 않음
+    if (config.method === 'DELETE' || response.status === 204) {
+      return null
+    }
+    
+    // 응답 본문이 비어있는지 확인
+    const text = await response.text()
+    if (!text) {
+      return null
+    }
+    
+    return JSON.parse(text)
   } catch (error) {
     console.error('API request failed:', error)
     throw error

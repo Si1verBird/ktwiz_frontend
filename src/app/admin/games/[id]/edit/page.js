@@ -61,7 +61,15 @@ export default function EditGamePage() {
       })
     } catch (error) {
       console.error('경기 정보 조회 실패:', error)
-      setError('경기 정보를 불러오는데 실패했습니다.')
+      if (error.message.includes('404')) {
+        setError('존재하지 않는 경기입니다.')
+        // 3초 후 게임 목록 페이지로 리디렉션
+        setTimeout(() => {
+          router.push('/admin/games')
+        }, 3000)
+      } else {
+        setError('경기 정보를 불러오는데 실패했습니다.')
+      }
     } finally {
       setLoading(false)
     }

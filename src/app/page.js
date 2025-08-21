@@ -45,8 +45,9 @@ export default function HomePage() {
 
   // 데이터 로드
   useEffect(() => {
+    if (!mounted) return // 마운트 후에만 데이터 로드
     fetchData()
-  }, [])
+  }, [mounted])
 
   const fetchData = async () => {
     console.log('🔍 [DEBUG] 데이터 로딩 시작')
@@ -142,13 +143,13 @@ export default function HomePage() {
     router.push('/')
   }
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <Layout>
         <div className="bg-gray-50 pb-24 flex items-center justify-center py-20">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
+            <p className="mt-4 text-gray-600">{!mounted ? "로딩 중..." : "데이터를 불러오는 중..."}</p>
           </div>
         </div>
       </Layout>
@@ -164,12 +165,12 @@ export default function HomePage() {
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-2xl mb-2">
-                  {mounted && user ? `${user.nickname}님` : '게스트님'}
+                  {user ? `${user.nickname}님` : '게스트님'}
                 </div>
                 <div className="text-lg">오늘도 함께 응원해요!</div>
               </div>
                           {/* 로그인/로그아웃 버튼 */}
-            {mounted && user ? (
+            {user ? (
               <div className="flex flex-col items-end space-y-1">
                 <button 
                   onClick={handleLogout}
@@ -178,7 +179,7 @@ export default function HomePage() {
                   로그아웃
                 </button>
               </div>
-            ) : mounted ? (
+            ) : (
               <button 
                 onClick={() => router.push('/login')}
                 className="flex items-center text-xs px-3 py-1 rounded bg-white/20 backdrop-blur-sm hover:bg-white/30"
@@ -186,8 +187,6 @@ export default function HomePage() {
                 <LogIn className="w-3 h-3 mr-1" />
                 로그인
               </button>
-            ) : (
-              <div className="text-xs px-3 py-1 text-white/50">로딩중...</div>
             )}
             </div>
           </div>
@@ -206,7 +205,7 @@ export default function HomePage() {
             </button>
             
             {/* 로그인 상태에 따라 다른 버튼 표시 */}
-            {mounted && user ? (
+            {user ? (
               user.is_admin ? (
                 <button 
                   onClick={() => router.push("/schedule")}
@@ -224,7 +223,7 @@ export default function HomePage() {
                   <span className="text-sm">MY위즈</span>
                 </button>
               )
-            ) : mounted ? (
+            ) : (
               <button 
                 onClick={() => router.push("/login")}
                 className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2"
@@ -232,11 +231,6 @@ export default function HomePage() {
                 <LogIn className="w-6 h-6 text-white" />
                 <span className="text-sm">로그인</span>
               </button>
-            ) : (
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 flex items-center space-x-2">
-                <div className="w-6 h-6 bg-white/30 rounded animate-pulse"></div>
-                <div className="w-12 h-4 bg-white/30 rounded animate-pulse"></div>
-              </div>
             )}
           </div>
         </div>
@@ -402,7 +396,7 @@ export default function HomePage() {
             </button>
             
             {/* 관리자 경기 추가 버튼 */}
-            {mounted && user?.is_admin && (
+            {user?.is_admin && (
               <button 
                 onClick={() => router.push("/admin/add-game")}
                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm transition-colors"
