@@ -100,7 +100,7 @@ export default function EditGamePage() {
       await gameAPI.updateGame(gameId, gameData)
       
       alert('경기 정보가 성공적으로 수정되었습니다.')
-      router.push('/admin/games')
+      router.push('/schedule')
       
     } catch (error) {
       console.error('경기 수정 실패:', error)
@@ -112,10 +112,34 @@ export default function EditGamePage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
+    
+    // 새로운 formData 생성
+    const newFormData = {
+      ...formData,
       [name]: value
-    }))
+    }
+    
+    // 날짜가 변경되면 자동으로 상태 결정 (8월 22일 기준)
+    if ((name === 'date' || name === 'hour' || name === 'minute') && newFormData.date && newFormData.hour) {
+      const selectedDate = new Date(`${newFormData.date}T${newFormData.hour}:${newFormData.minute}:00`)
+      
+      // 2025년 8월 22일을 기준으로 판단
+      const cutoffDate = new Date('2025-08-22T00:00:00')
+      
+      let autoStatus = 'scheduled'
+      
+      if (selectedDate < cutoffDate) {
+        // 8월 22일 이전 → 종료
+        autoStatus = 'ended'
+      } else {
+        // 8월 22일 이후 → 예정
+        autoStatus = 'scheduled'
+      }
+      
+      newFormData.status = autoStatus
+    }
+    
+    setFormData(newFormData)
   }
 
   if (loading) {

@@ -13,8 +13,8 @@ export default function SchedulePage() {
   const [games, setGames] = useState([])
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
-  // 현재 월을 8월로 설정 (2024년 8월)
-  const [currentMonth, setCurrentMonth] = useState(new Date(2024, 7)) // 8월 (0-based)
+  // 현재 월을 8월로 설정 (2025년 8월)
+  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 7)) // 8월 (0-based)
   
   // 새로운 필터 상태
   const [showKtWizOnly, setShowKtWizOnly] = useState(true)

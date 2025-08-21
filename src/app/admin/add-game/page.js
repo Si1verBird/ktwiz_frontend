@@ -80,33 +80,27 @@ export default function AddGamePage() {
       [name]: value
     }
     
-    // 날짜가 변경되면 자동으로 상태 결정
+    // 날짜가 변경되면 자동으로 상태 결정 (8월 22일 기준)
     if ((name === 'date' || name === 'hour' || name === 'minute') && newFormData.date && newFormData.hour) {
       const selectedDate = new Date(`${newFormData.date}T${newFormData.hour}:${newFormData.minute}:00`)
       
-      const today = new Date()
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-      const selectedStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate())
+      // 2025년 8월 22일을 기준으로 판단
+      const cutoffDate = new Date('2025-08-22T00:00:00')
       
       let autoStatus = 'scheduled'
-      let disabled = true
       let showScore = false
       
-      if (selectedStart < todayStart) {
-        // 과거 날짜 → 종료
+      if (selectedDate < cutoffDate) {
+        // 8월 22일 이전 → 종료
         autoStatus = 'ended'
         showScore = true
-      } else if (selectedStart > todayStart) {
-        // 미래 날짜 → 예정
-        autoStatus = 'scheduled'
       } else {
-        // 오늘 날짜 → 직접 선택 가능
-        disabled = false
-        autoStatus = formData.status || 'scheduled'
-        showScore = formData.status === 'ended'
+        // 8월 22일 이후 → 예정
+        autoStatus = 'scheduled'
+        showScore = false // scheduled일 때는 점수 필드 숨김
       }
       
-      setStatusDisabled(disabled)
+      setStatusDisabled(true) // 항상 자동 설정
       setShowScoreFields(showScore)
       newFormData.status = autoStatus
     }
