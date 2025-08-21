@@ -85,10 +85,13 @@ export const gameAPI = {
   }),
   
   // 경기 수정
-  updateGame: (id, gameData) => apiRequest(`/games/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(gameData),
-  }),
+  updateGame: (id, gameData) => {
+    console.log('🔍 [API] 경기 수정 요청:', id, gameData)
+    return apiRequest(`/games/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(gameData),
+    })
+  },
   
   // 경기 삭제
   deleteGame: (id) => apiRequest(`/games/${id}`, {
@@ -96,7 +99,10 @@ export const gameAPI = {
   }),
   
   // 경기 상세 조회
-  getGameById: (id) => apiRequest(`/games/${id}`),
+  getGameById: (id) => {
+    console.log('🔍 [API] 경기 상세 조회 요청:', id)
+    return apiRequest(`/games/${id}`)
+  },
 }
 
 // 경기장 관련 API

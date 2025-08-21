@@ -38,15 +38,22 @@ export default function EditGamePage() {
   const fetchGame = async () => {
     try {
       setLoading(true)
+      console.log('🔍 [DEBUG] 경기 정보 로딩 시작:', gameId)
       const game = await gameAPI.getGameById(gameId)
+      console.log('🔍 [DEBUG] 경기 정보 로딩 완료:', game)
       
-      // 날짜 형식 변환 (YYYY-MM-DDTHH:mm 형식으로)
-      const gameDate = new Date(game.dateTime)
-      const date = gameDate.toISOString().slice(0, 10) // YYYY-MM-DD
-      const hour = gameDate.getHours().toString().padStart(2, '0')
-      const minute = gameDate.getMinutes().toString().padStart(2, '0')
+      // 날짜 형식 변환 (백엔드 데이터를 그대로 사용)
+      // 백엔드에서 받은 dateTime은 이미 올바른 로컬 시간이므로 직접 파싱
+      const dateTimeStr = game.dateTime // "2025-08-01T07:00:00" 형식
+      const date = dateTimeStr.slice(0, 10) // "2025-08-01"
+      const timeStr = dateTimeStr.slice(11, 16) // "07:00"
+      const [hour, minute] = timeStr.split(':')
+      
+      console.log('🔍 [DEBUG] 원본 dateTime:', game.dateTime)
+      console.log('🔍 [DEBUG] 파싱된 date:', date, 'time:', `${hour}:${minute}`)
       
       setOriginalGame(game)
+      console.log('🔍 [DEBUG] originalGame 설정 완료')
       setFormData({
         date,
         hour,
@@ -59,6 +66,7 @@ export default function EditGamePage() {
         awayScore: game.awayScore || 0,
         ticketPrice: game.ticketPrice || 0
       })
+      console.log('🔍 [DEBUG] formData 설정 완료')
     } catch (error) {
       console.error('경기 정보 조회 실패:', error)
       if (error.message.includes('404')) {
@@ -83,19 +91,43 @@ export default function EditGamePage() {
       return
     }
 
+    if (!originalGame) {
+      setError('경기 정보를 불러오는 중입니다. 잠시만 기다려주세요.')
+      return
+    }
+
     try {
       setSaving(true)
       setError('')
 
-      // ISO 형식으로 변환
+      // 백엔드와 동일한 형식으로 변환 (시간대 변환 없이)
       const gameData = {
-        ...formData,
-        dateTime: new Date(`${formData.date}T${formData.hour}:${formData.minute}:00`).toISOString(),
-        inning: parseInt(formData.inning) || 0,
-        homeScore: parseInt(formData.homeScore) || 0,
-        awayScore: parseInt(formData.awayScore) || 0,
+        dateTime: `${formData.date}T${formData.hour}:${formData.minute}:00`,
+        homeTeamId: originalGame.homeTeam?.id,
+        awayTeamId: originalGame.awayTeam?.id,
+        status: formData.status,
         ticketPrice: parseInt(formData.ticketPrice) || 0
       }
+      
+      console.log('📝 원본 dateTime:', originalGame.dateTime)
+      console.log('📝 생성된 dateTime:', gameData.dateTime)
+
+      // 팀 ID 검증
+      if (!gameData.homeTeamId || !gameData.awayTeamId) {
+        setError('팀 정보가 올바르지 않습니다. 페이지를 새로고침해주세요.')
+        return
+      }
+
+      console.log('📝 경기 수정 데이터:', gameData)
+
+      // 경기가 종료된 경우에만 점수와 이닝 정보 포함
+      if (formData.status === 'ended') {
+        gameData.inning = parseInt(formData.inning) || 9
+        gameData.homeScore = parseInt(formData.homeScore) || 0
+        gameData.awayScore = parseInt(formData.awayScore) || 0
+      }
+
+      console.log('📝 최종 경기 수정 데이터:', gameData)
 
       await gameAPI.updateGame(gameId, gameData)
       
@@ -358,7 +390,7 @@ export default function EditGamePage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || !originalGame}
                   className="inline-flex items-center px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {saving ? (
