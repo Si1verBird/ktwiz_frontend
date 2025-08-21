@@ -63,7 +63,7 @@ export default function EditGamePage() {
       console.error('경기 정보 조회 실패:', error)
       if (error.message.includes('404')) {
         setError('존재하지 않는 경기입니다.')
-        // 3초 후 게임 목록 페이지로 리디렉션
+        // 3초 후 게임 목록 페이지로 리디렉션p
         setTimeout(() => {
           router.push('/admin/games')
         }, 3000)

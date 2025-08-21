@@ -6,11 +6,15 @@ import Layout from '../../components/Layout'
 import { gameAPI, teamAPI } from '../../lib/api'
 import { useRouter } from 'next/navigation'
 
+// KT 위즈 팀 ID
+const KT_WIZ_ID = '20000000-0000-0000-0000-000000000008'
+
 export default function SchedulePage() {
   const [games, setGames] = useState([])
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
-  const [currentMonth, setCurrentMonth] = useState(new Date())
+  // 현재 월을 8월로 설정 (2024년 8월)
+  const [currentMonth, setCurrentMonth] = useState(new Date(2024, 7)) // 8월 (0-based)
   
   // 새로운 필터 상태
   const [showKtWizOnly, setShowKtWizOnly] = useState(true)
@@ -48,7 +52,7 @@ export default function SchedulePage() {
     
     fetchTeams()
     fetchGamesWithFilter()
-  }, [mounted, showKtWizOnly, showPastGamesOnly])
+  }, [mounted, showKtWizOnly, showPastGamesOnly, currentMonth])
 
   const fetchTeams = async () => {
     try {
@@ -83,11 +87,38 @@ export default function SchedulePage() {
         teamsToFilter, 
         statusesToFilter, 
         showKtWizOnly, 
-        showPastGamesOnly 
+        showPastGamesOnly,
+        currentMonth: currentMonth.getFullYear() + '-' + (currentMonth.getMonth() + 1)
       })
       
+      console.log('🔍 [DEBUG] API 호출 시작...')
       const data = await gameAPI.getGamesByFilter(teamsToFilter, statusesToFilter)
-      setGames(data || [])
+      console.log('🔍 [DEBUG] API 응답:', data?.length, '개 경기')
+      
+      // 월별 필터링 및 날짜 오름차순 정렬
+      let matchCount = 0
+      let filteredGames = (data || [])
+        .filter(game => {
+          const gameDate = new Date(game.dateTime)
+          const isMatch = gameDate.getFullYear() === currentMonth.getFullYear() && 
+                         gameDate.getMonth() === currentMonth.getMonth()
+          // 첫 번째 경기만 로깅
+          if (matchCount === 0 && isMatch) {
+            console.log('🔍 [DEBUG] 첫 번째 매칭 경기:', {
+              gameDateTime: game.dateTime,
+              gameYear: gameDate.getFullYear(),
+              gameMonth: gameDate.getMonth(),
+              currentYear: currentMonth.getFullYear(),
+              currentMonth: currentMonth.getMonth()
+            })
+          }
+          if (isMatch) matchCount++
+          return isMatch
+        })
+        .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
+      
+      console.log('🔍 [DEBUG] 월별 필터링 결과:', filteredGames?.length, '개 경기')
+      setGames(filteredGames)
     } catch (error) {
       console.error('경기 정보를 가져오는데 실패했습니다:', error)
       setGames([])
@@ -122,6 +153,17 @@ export default function SchedulePage() {
 
   const cancelDelete = () => {
     setDeleteConfirm({ show: false, gameId: null, gameName: '' })
+  }
+
+  // 월 네비게이션 함수들
+  const goToPreviousMonth = () => {
+    const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+    setCurrentMonth(newMonth)
+  }
+
+  const goToNextMonth = () => {
+    const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
+    setCurrentMonth(newMonth)
   }
 
   const formatDate = (dateString) => {
@@ -209,17 +251,27 @@ export default function SchedulePage() {
   return (
     <Layout>
       <div className="flex-1 bg-gray-50 overflow-y-auto">
-        {/* Header with Filter Button */}
-        <div className="bg-white px-4 py-4 border-b border-gray-200">
+        {/* Header with Month Navigation */}
+        <div className="bg-white px-3 py-3 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <ChevronLeft className="w-6 h-6 text-gray-400" />
-              <div className="text-xl font-medium">
-                {currentMonth.getFullYear()}.{currentMonth.getMonth() + 1}
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={goToPreviousMonth}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-600 hover:text-gray-800" />
+              </button>
+              <div className="text-xl font-medium min-w-[100px] text-center">
+                {currentMonth.getFullYear()}.{String(currentMonth.getMonth() + 1).padStart(2, '0')}
               </div>
-              <ChevronRight className="w-6 h-6 text-gray-400" />
+              <button 
+                onClick={goToNextMonth}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-600 hover:text-gray-800" />
+              </button>
             </div>
-            <div className="flex items-center space-x-3">             
+            <div className="flex items-center space-x-2">             
 
               
               {/* KT Wiz만 보기 스위치 */}
