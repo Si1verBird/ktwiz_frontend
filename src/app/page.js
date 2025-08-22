@@ -425,7 +425,11 @@ export default function HomePage() {
         {newsSlides.length > 0 ? (
           <div className="space-y-4">
             {newsSlides.map((slide) => (
-              <div key={slide.id} className="bg-white rounded-2xl p-4 shadow-sm">
+              <button
+                key={slide.id}
+                onClick={() => router.push(`/post/${slide.id}`)}
+                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow w-full text-left"
+              >
                 <div className="flex items-start space-x-4">
                   {/* 썸네일 이미지 또는 기본 아이콘 */}
                   <div className="flex-shrink-0">
@@ -462,8 +466,13 @@ export default function HomePage() {
                       {slide.content}
                     </p>
                   </div>
+                  
+                  {/* 화살표 아이콘 */}
+                  <div className="flex-shrink-0">
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         ) : (

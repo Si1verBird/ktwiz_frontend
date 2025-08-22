@@ -176,7 +176,7 @@ export default function ChatPage() {
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
         {chatMessages.map((message) => {
           const isUser = message.role === 'USER'
           const isAdmin = message.role === 'ADMIN'
@@ -219,31 +219,33 @@ export default function ChatPage() {
         })}
       </div>
 
-      {/* Chat Input */}
-      <div className="border-t border-gray-200 p-4">
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                console.log('🔍 [DEBUG] Enter키 눌림')
+      {/* Chat Input - Fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div className="max-w-md mx-auto p-4 pb-safe">
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  console.log('🔍 [DEBUG] Enter키 눌림')
+                  handleSendMessage()
+                }
+              }}
+              placeholder="메시지를 입력하세요..."
+              className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-red-500"
+            />
+            <button
+              onClick={() => {
+                console.log('🔍 [DEBUG] 전송 버튼 클릭됨')
                 handleSendMessage()
-              }
-            }}
-            placeholder="메시지를 입력하세요..."
-            className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-red-500"
-          />
-          <button
-            onClick={() => {
-              console.log('🔍 [DEBUG] 전송 버튼 클릭됨')
-              handleSendMessage()
-            }}
-            className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+              }}
+              className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

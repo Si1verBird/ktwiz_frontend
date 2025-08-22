@@ -219,22 +219,6 @@ export default function SchedulePage() {
     else return 'text-green-600 font-bold' // 무승부 - 초록색
   }
 
-  // const getTeamColor = (teamName) => {
-  //   const teamColors = {
-  //     'KT Wiz': 'bg-black',
-  //     'LG Twins': 'bg-red-600',
-  //     'SSG Landers': 'bg-red-500',
-  //     'Samsung Lions': 'bg-blue-600',
-  //     'Doosan Bears': 'bg-green-600',
-  //     'KIA Tigers': 'bg-red-700',
-  //     'Lotte Giants': 'bg-red-400',
-  //     'Hanwha Eagles': 'bg-orange-500',
-  //     'NC Dinos': 'bg-blue-600',
-  //     'Kiwoom Heroes': 'bg-yellow-600'
-  //   }
-  //   return teamColors[teamName] || 'bg-gray-500'
-  // }
-
   if (loading) {
     return (
       <Layout>
@@ -275,34 +259,34 @@ export default function SchedulePage() {
 
               
               {/* KT Wiz만 보기 스위치 */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">KT wiz만</span>
+              <div className="flex items-center space-x-1">
+                <span className="text-sm text-gray-700">KT wiz</span>
                 <button
                   onClick={toggleKtWizOnly}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  className={`relative inline-flex h-6 w-9 items-center rounded-full transition-colors ${
                     showKtWizOnly ? 'bg-blue-500' : 'bg-gray-300'
                   }`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showKtWizOnly ? 'translate-x-6' : 'translate-x-1'
+                      showKtWizOnly ? 'translate-x-4' : 'translate-x-1'
                     }`}
                   />
                 </button>
               </div>
               
               {/* 지난 경기만 보기 스위치 */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">지난 경기만</span>
+              <div className="flex items-center space-x-1">
+                <span className="text-sm text-gray-700">종료경기</span>
                 <button
                   onClick={togglePastGamesOnly}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  className={`relative inline-flex h-6 w-9 items-center rounded-full transition-colors ${
                     showPastGamesOnly ? 'bg-blue-500' : 'bg-gray-300'
                   }`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showPastGamesOnly ? 'translate-x-6' : 'translate-x-1'
+                      showPastGamesOnly ? 'translate-x-4' : 'translate-x-1'
                     }`}
                   />
                 </button>
