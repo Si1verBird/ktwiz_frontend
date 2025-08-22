@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:8080/api'
+// 모든 기기에서 접근 가능하도록 고정 IP 사용
+const API_BASE_URL = 'http://172.30.1.29:8080/api'
 
 // 공통 fetch 함수
 const apiRequest = async (endpoint, options = {}) => {
