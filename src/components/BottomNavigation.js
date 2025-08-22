@@ -16,20 +16,25 @@ export default function BottomNavigation() {
   ]
 
   return (
-    <div className="bg-black px-4 py-2">
-      <div className="flex justify-around">
-        {navItems.map(({ key, icon: Icon, label, path }) => (
-          <button
-            key={key}
-            onClick={() => router.push(path)}
-            className={`flex flex-col items-center py-1 px-2 ${
-              pathname === path ? "text-white" : "text-gray-500"
-            }`}
-          >
-            <Icon className="w-5 h-5 mb-1" />
-            <span className="text-xs">{label}</span>
-          </button>
-        ))}
+    <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 z-50">
+      {/* 모바일 Safe Area 지원 */}
+      <div className="px-4 py-2 pb-safe">
+        <div className="flex justify-around max-w-md mx-auto">
+          {navItems.map(({ key, icon: Icon, label, path }) => (
+            <button
+              key={key}
+              onClick={() => router.push(path)}
+              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 min-w-0 flex-1 ${
+                pathname === path 
+                  ? "text-white bg-gray-800" 
+                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"
+              }`}
+            >
+              <Icon className="w-5 h-5 mb-1 flex-shrink-0" />
+              <span className="text-xs font-medium truncate">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

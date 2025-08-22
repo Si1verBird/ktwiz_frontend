@@ -23,8 +23,8 @@ export default function Layout({ children }) {
         {/* Header - Hidden for chat screen */}
         {!isChat && <Header />}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        {/* Content with bottom padding for fixed navigation */}
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden ${!isChat ? 'pb-20' : ''}`}>
           {children}
         </div>
 
@@ -42,8 +42,8 @@ export default function Layout({ children }) {
       {/* Header - Hidden for chat screen */}
       {!isChat && <Header />}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      {/* Content with bottom padding for fixed navigation */}
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden ${!isChat ? 'pb-20' : ''}`}>
         {children}
       </div>
 

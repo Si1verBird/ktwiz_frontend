@@ -9,6 +9,7 @@
   
   body {
     overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -16,6 +17,11 @@
   .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
     overflow-scrolling: touch;
+  }
+  
+  /* 모바일 Safe Area 지원 */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
